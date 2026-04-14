@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA Project - Sistema de Análise de Projetos para IA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --dark: #212529;
+            --light: #f8f9fa;
+            --border-radius: 12px;
+            --shadow: 0 10px 25px rgba(0,0,0,0.1);
+            --transition: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .logo {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--dark);
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .workflow {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .step-text {
+            font-weight: 500;
+        }
+
+        .arrow {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 30px;
+            height: fit-content;
+        }
+
+        .card h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: var(--border-radius);
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--light);
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: #f0f4ff;
+        }
+
+        .upload-area.drag-over {
+            border-color: var(--success);
+            background: #e6f7ff;
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        .upload-subtext {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .file-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+            border: 1px solid #eee;
+            border-radius: var(--border-radius);
+            padding: 15px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: var(--transition);
+        }
+
+        .file-item:hover {
+            background: #f8f9fa;
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-icon {
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        .file-name {
+            flex: 1;
+            font-size: 0.9rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-size {
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .image-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: var(--transition);
+            background: white;
+        }
+
+        .image-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .image-preview {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            background: #f8f9fa;
+        }
+
+        .image-info {
+            padding: 10px;
+            text-align: center;
+        }
+
+        .image-name {
+            font-size: 0.8rem;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #2db7d6;
+        }
+
+        .btn-full {
+            width: 100%;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .analysis-results {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: var(--border-radius);
+            display: none;
+        }
+
+        .analysis-results h3 {
+            margin-bottom: 15px;
+            color: var(--dark);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .structure-tree {
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .tree-item {
+            padding: 2px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tree-item.folder {
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .tree-item.file {
+            color: #666;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--border-radius);
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: #666;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .base64-container {
+            background: #1a1a1a;
+            color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .tab-container {
+            margin-top: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .tab {
+            padding: 12px 25px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .message {
+            padding: 15px 20px;
+            border-radius: var(--border-radius);
+            margin: 20px 0;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .progress-container {
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--success));
+            border-radius: 5px;
+            transition: width 0.3s;
+            width: 0%;
+        }
+
+        .restore-section {
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 2px solid #eee;
+        }
+
+        .instructions {
+            background: #e6f7ff;
+            border-left: 4px solid var(--primary);
+            padding: 20px;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            margin: 20px 0;
+        }
+
+        .instructions h4 {
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .workflow {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .arrow {
+                transform: rotate(90deg);
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-project-diagram"></i>
+            </div>
+            <h1>IA Project</h1>
+            <p class="subtitle">
+                Sistema genérico para análise de projetos web. Converta qualquer projeto em um arquivo 
+                estruturado (.iaproject) com imagens em Base64 para análise e modificação por IAs.
+            </p>
+            
+            <div class="workflow">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-text">Upload do Projeto</div>
+                </div>
+                <div class="arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-text">Análise Automática</div>
+                </div>
+                <div class="arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-text">Gerar .iaproject</div>
+                </div>
+                <div class="arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-text">IA Modifica & Download</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Coluna 1: Upload e Análise -->
+            <div class="card">
+                <h2><i class="fas fa-cloud-upload-alt"></i> Upload do Projeto</h2>
+                
+                <div class="upload-area" id="dropArea">
+                    <div class="upload-icon">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <div class="upload-text">Arraste e solte sua pasta de projeto aqui</div>
+                    <div class="upload-subtext">ou clique para selecionar a pasta</div>
+                    <input type="file" id="fileInput" multiple webkitdirectory style="display: none;">
+                </div>
+                
+                <div class="instructions">
+                    <h4><i class="fas fa-info-circle"></i> Como funciona:</h4>
+                    <ul>
+                        <li>Selecione a pasta raiz do seu projeto web</li>
+                        <li>O sistema analisará todos os arquivos automaticamente</li>
+                        <li>Imagens serão convertidas para Base64</li>
+                        <li>Gere um arquivo .iaproject estruturado</li>
+                        <li>Envie para IA, faça modificações e restaure o projeto</li>
+                    </ul>
+                </div>
+                
+                <div class="file-list" id="fileList"></div>
+                
+                <button class="btn btn-primary btn-full" id="btnAnalyze" disabled>
+                    <i class="fas fa-search"></i> Analisar Projeto
+                </button>
+                
+                <div class="analysis-results" id="analysisResults">
+                    <h3><i class="fas fa-chart-bar"></i> Análise do Projeto</h3>
+                    <div class="stats-grid" id="statsGrid"></div>
+                    
+                    <h3 style="margin-top: 20px;"><i class="fas fa-sitemap"></i> Estrutura</h3>
+                    <div class="structure-tree" id="structureTree"></div>
+                </div>
+            </div>
+
+            <!-- Coluna 2: Imagens e Exportação -->
+            <div class="card">
+                <div class="tab-container">
+                    <div class="tabs">
+                        <button class="tab active" data-tab="images">Imagens <span id="imageCount">(0)</span></button>
+                        <button class="tab" data-tab="export">Exportação</button>
+                        <button class="tab" data-tab="restore">Restauração</button>
+                    </div>
+                    
+                    <!-- Tab 1: Imagens -->
+                    <div class="tab-content active" id="tabImages">
+                        <div class="image-grid" id="imageGrid"></div>
+                        <div class="message" id="noImagesMessage">
+                            <i class="fas fa-image"></i> Nenhuma imagem encontrada no projeto
+                        </div>
+                    </div>
+                    
+                    <!-- Tab 2: Exportação -->
+                    <div class="tab-content" id="tabExport">
+                        <h3><i class="fas fa-file-export"></i> Gerar .iaproject</h3>
+                        <p>Converta todo o projeto em um arquivo único estruturado para análise por IA:</p>
+                        
+                        <div class="progress-container" id="progressContainer" style="display: none;">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <div style="text-align: center; margin-top: 10px; color: #666;" id="progressText">
+                                Processando...
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-success btn-full" id="btnExport" disabled>
+                            <i class="fas fa-file-code"></i> Gerar Arquivo .iaproject
+                        </button>
+                        
+                        <div class="message" id="exportMessage"></div>
+                    </div>
+                    
+                    <!-- Tab 3: Restauração -->
+                    <div class="tab-content" id="tabRestore">
+                        <h3><i class="fas fa-file-import"></i> Restaurar Projeto</h3>
+                        <p>Importe um arquivo .iaproject modificado e restaure o projeto completo:</p>
+                        
+                        <div class="upload-area" id="restoreDropArea">
+                            <div class="upload-icon">
+                                <i class="fas fa-file-import"></i>
+                            </div>
+                            <div class="upload-text">Arraste e solte arquivo .iaproject</div>
+                            <div class="upload-subtext">ou clique para selecionar</div>
+                            <input type="file" id="iaprojectInput" accept=".iaproject" style="display: none;">
+                        </div>
+                        
+                        <div id="restorePreview"></div>
+                        
+                        <button class="btn btn-primary btn-full" id="btnRestore" disabled>
+                            <i class="fas fa-folder-plus"></i> Restaurar Projeto Completo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para visualizar Base64 -->
+        <div class="modal" id="base64Modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-code"></i> Base64 da Imagem</h3>
+                    <button class="modal-close" id="closeModal">&times;</button>
+                </div>
+                <div class="base64-container" id="base64Code"></div>
+                <div class="actions">
+                    <button class="btn btn-primary" id="btnCopyBase64">
+                        <i class="fas fa-copy"></i> Copiar Base64
+                    </button>
+                    <button class="btn btn-success" id="btnUpdateBase64">
+                        <i class="fas fa-sync-alt"></i> Atualizar Base64
+                    </button>
+                    <button class="btn" id="btnDownloadImage">
+                        <i class="fas fa-download"></i> Baixar Imagem
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div class="loading" id="loadingOverlay">
+            <div class="spinner"></div>
+            <h3 id="loadingTitle">Processando...</h3>
+            <p id="loadingText">Aguarde enquanto analisamos seu projeto</p>
+        </div>
+    </div>
+
+    <script>
+        // Sistema genérico para qualquer projeto
+        class ProjectAnalyzer {
+            constructor() {
+                this.project = {
+                    files: [],
+                    images: [],
+                    structure: {},
+                    metadata: {
+                        totalFiles: 0,
+                        totalSize: 0,
+                        fileTypes: {},
+                        imageCount: 0,
+                        codeFiles: 0
+                    }
+                };
+                
+                this.currentImageIndex = 0;
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.setupTabs();
+            }
+            
+            setupEventListeners() {
+                // Upload
+                const dropArea = document.getElementById('dropArea');
+                const fileInput = document.getElementById('fileInput');
+                
+                dropArea.addEventListener('click', () => fileInput.click());
+                dropArea.addEventListener('dragover', this.handleDragOver.bind(this));
+                dropArea.addEventListener('dragleave', this.handleDragLeave.bind(this));
+                dropArea.addEventListener('drop', this.handleDrop.bind(this));
+                
+                fileInput.addEventListener('change', this.handleFileSelect.bind(this));
+                
+                // Botões
+                document.getElementById('btnAnalyze').addEventListener('click', this.analyzeProject.bind(this));
+                document.getElementById('btnExport').addEventListener('click', this.exportProject.bind(this));
+                document.getElementById('btnRestore').addEventListener('click', this.restoreProject.bind(this));
+                
+                // Modal
+                document.getElementById('closeModal').addEventListener('click', () => {
+                    document.getElementById('base64Modal').style.display = 'none';
+                });
+                
+                document.getElementById('btnCopyBase64').addEventListener('click', this.copyBase64.bind(this));
+                document.getElementById('btnUpdateBase64').addEventListener('click', this.updateBase64.bind(this));
+                document.getElementById('btnDownloadImage').addEventListener('click', this.downloadImage.bind(this));
+                
+                // Restauração
+                const restoreDropArea = document.getElementById('restoreDropArea');
+                const iaprojectInput = document.getElementById('iaprojectInput');
+                
+                restoreDropArea.addEventListener('click', () => iaprojectInput.click());
+                iaprojectInput.addEventListener('change', this.handleIAProjectUpload.bind(this));
+            }
+            
+            setupTabs() {
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.addEventListener('click', (e) => {
+                        const tabName = e.target.getAttribute('data-tab');
+                        
+                        // Atualizar tabs
+                        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                        
+                        e.target.classList.add('active');
+                        document.getElementById(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`).classList.add('active');
+                    });
+                });
+            }
+            
+            // ========== UPLOAD ==========
+            handleDragOver(e) {
+                e.preventDefault();
+                document.getElementById('dropArea').classList.add('drag-over');
+            }
+            
+            handleDragLeave(e) {
+                e.preventDefault();
+                document.getElementById('dropArea').classList.remove('drag-over');
+            }
+            
+            async handleDrop(e) {
+                e.preventDefault();
+                document.getElementById('dropArea').classList.remove('drag-over');
+                
+                const items = e.dataTransfer.items;
+                const files = [];
+                
+                for (const item of items) {
+                    if (item.kind === 'file') {
+                        const entry = item.webkitGetAsEntry();
+                        await this.traverseFileTree(entry, files);
+                    }
+                }
+                
+                this.loadFiles(files);
+            }
+            
+            async handleFileSelect(e) {
+                const files = Array.from(e.target.files);
+                this.loadFiles(files);
+            }
+            
+            async traverseFileTree(entry, files, path = '') {
+                if (entry.isFile) {
+                    const file = await new Promise(resolve => entry.file(resolve));
+                    file.relativePath = path + entry.name;
+                    files.push(file);
+                } else if (entry.isDirectory) {
+                    const dirReader = entry.createReader();
+                    const entries = await new Promise(resolve => dirReader.readEntries(resolve));
+                    
+                    for (const childEntry of entries) {
+                        await this.traverseFileTree(childEntry, files, path + entry.name + '/');
+                    }
+                }
+            }
+            
+            loadFiles(files) {
+                this.resetProject();
+                
+                files.forEach(file => {
+                    const relativePath = file.relativePath || file.webkitRelativePath || file.name;
+                    const fileType = this.getFileType(file.name);
+                    
+                    const fileData = {
+                        name: file.name,
+                        path: relativePath,
+                        type: fileType,
+                        size: file.size,
+                        file: file,
+                        extension: file.name.split('.').pop().toLowerCase()
+                    };
+                    
+                    this.project.files.push(fileData);
+                    
+                    // Atualizar estatísticas
+                    this.project.metadata.totalFiles++;
+                    this.project.metadata.totalSize += file.size;
+                    
+                    if (fileType === 'image') {
+                        this.project.metadata.imageCount++;
+                        this.project.images.push(fileData);
+                    } else if (['html', 'css', 'js', 'ts', 'json', 'php', 'py', 'java', 'cpp', 'c', 'cs'].includes(fileType)) {
+                        this.project.metadata.codeFiles++;
+                    }
+                    
+                    if (!this.project.metadata.fileTypes[fileType]) {
+                        this.project.metadata.fileTypes[fileType] = 0;
+                    }
+                    this.project.metadata.fileTypes[fileType]++;
+                });
+                
+                this.updateFileList();
+                this.updateImageGrid();
+                document.getElementById('btnAnalyze').disabled = false;
+                
+                // Mostrar mensagem
+                this.showMessage(`✅ ${files.length} arquivos carregados. Clique em "Analisar Projeto" para continuar.`, 'success');
+            }
+            
+            // ========== ANÁLISE ==========
+            async analyzeProject() {
+                this.showLoading('Analisando projeto...', 'Estruturando arquivos e detectando padrões');
+                
+                // Analisar estrutura
+                this.analyzeStructure();
+                
+                // Atualizar UI
+                this.updateAnalysisResults();
+                this.updateStats();
+                
+                // Habilitar exportação
+                document.getElementById('btnExport').disabled = false;
+                
+                // Mostrar resultados
+                document.getElementById('analysisResults').style.display = 'block';
+                
+                this.hideLoading();
+                this.showMessage('✅ Análise completa! O projeto está pronto para exportação.', 'success');
+            }
+            
+            analyzeStructure() {
+                const structure = {};
+                
+                this.project.files.forEach(file => {
+                    const path = file.path.replace(/\\/g, '/');
+                    const parts = path.split('/');
+                    let current = structure;
+                    
+                    parts.forEach((part, index) => {
+                        if (index === parts.length - 1) {
+                            // É um arquivo
+                            current[part] = {
+                                type: 'file',
+                                fileType: file.type,
+                                size: file.size,
+                                extension: file.extension
+                            };
+                        } else {
+                            // É uma pasta
+                            if (!current[part]) {
+                                current[part] = { type: 'folder', contents: {} };
+                            }
+                            current = current[part].contents;
+                        }
+                    });
+                });
+                
+                this.project.structure = structure;
+            }
+            
+            // ========== EXPORTAÇÃO ==========
+            async exportProject() {
+                this.showLoading('Exportando projeto...', 'Convertendo imagens para Base64 e estruturando dados');
+                
+                // Mostrar progresso
+                const progressContainer = document.getElementById('progressContainer');
+                const progressFill = document.getElementById('progressFill');
+                const progressText = document.getElementById('progressText');
+                
+                progressContainer.style.display = 'block';
+                
+                // Converter imagens para Base64
+                let processed = 0;
+                const totalImages = this.project.images.length;
+                
+                for (let i = 0; i < this.project.images.length; i++) {
+                    const image = this.project.images[i];
+                    
+                    try {
+                        image.base64 = await this.fileToBase64(image.file);
+                        processed++;
+                        
+                        // Atualizar progresso
+                        const percent = Math.round((processed / totalImages) * 100);
+                        progressFill.style.width = `${percent}%`;
+                        progressText.textContent = `Convertendo imagens: ${processed}/${totalImages} (${percent}%)`;
+                    } catch (error) {
+                        console.error('Erro ao converter imagem:', error);
+                    }
+                }
+                
+                progressText.textContent = 'Criando arquivo .iaproject...';
+                
+                // Criar objeto .iaproject
+                const iaproject = {
+                    iaproject: {
+                        version: "2.0",
+                        project_type: "web_project",
+                        created: new Date().toISOString(),
+                        generator: "Project Analyzer",
+                        
+                        metadata: {
+                            name: this.detectProjectName(),
+                            total_files: this.project.metadata.totalFiles,
+                            total_size: this.project.metadata.totalSize,
+                            file_types: this.project.metadata.fileTypes,
+                            image_count: this.project.metadata.imageCount,
+                            code_files: this.project.metadata.codeFiles,
+                            structure_hash: this.generateStructureHash()
+                        },
+                        
+                        structure: this.project.structure,
+                        
+                        files: {},
+                        
+                        images: {}
+                    }
+                };
+                
+                // Adicionar arquivos de texto
+                for (const file of this.project.files) {
+                    if (file.type !== 'image' && this.isTextFile(file.extension)) {
+                        try {
+                            const text = await file.file.text();
+                            const path = file.path.replace(/\\/g, '/');
+                            iaproject.iaproject.files[path] = {
+                                content: text,
+                                type: file.type,
+                                size: file.size,
+                                extension: file.extension
+                            };
+                        } catch (error) {
+                            console.error(`Erro ao ler arquivo ${file.name}:`, error);
+                        }
+                    }
+                }
+                
+                // Adicionar imagens em Base64
+                this.project.images.forEach(image => {
+                    const path = image.path.replace(/\\/g, '/');
+                    iaproject.iaproject.images[path] = {
+                        name: image.name,
+                        type: image.type,
+                        mime_type: image.file.type,
+                        size: image.size,
+                        base64: image.base64.split(',')[1], // Remove prefixo data:image/...
+                        extension: image.extension
+                    };
+                });
+                
+                // Adicionar configurações do projeto
+                iaproject.iaproject.config = {
+                    analysis_date: new Date().toISOString(),
+                    project_detected: this.detectProjectType(),
+                    suggested_ai_prompt: this.generateAIPrompt(),
+                    notes: "Arquivo gerado automaticamente pelo Project Analyzer"
+                };
+                
+                progressText.textContent = 'Gerando arquivo de download...';
+                
+                // Criar e baixar arquivo
+                const blob = new Blob([JSON.stringify(iaproject, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${this.detectProjectName() || 'project'}_${new Date().getTime()}.iaproject`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                progressContainer.style.display = 'none';
+                this.hideLoading();
+                
+                this.showMessage('✅ Arquivo .iaproject gerado com sucesso! Todas as imagens convertidas para Base64.', 'success');
+                
+                // Salvar localmente para referência
+                localStorage.setItem('lastGeneratedProject', JSON.stringify(iaproject));
+            }
+            
+            // ========== RESTAURAÇÃO ==========
+            async handleIAProjectUpload(e) {
+                const file = e.target.files[0];
+                if (!file || !file.name.endsWith('.iaproject')) {
+                    this.showMessage('❌ Por favor, selecione um arquivo .iaproject válido.', 'error');
+                    return;
+                }
+                
+                this.showLoading('Lendo arquivo .iaproject...', 'Analisando estrutura do projeto');
+                
+                try {
+                    const text = await file.text();
+                    const iaproject = JSON.parse(text);
+                    
+                    if (!iaproject.iaproject) {
+                        throw new Error('Arquivo .iaproject inválido');
+                    }
+                    
+                    this.displayIAProjectPreview(iaproject);
+                    document.getElementById('btnRestore').disabled = false;
+                    
+                    this.hideLoading();
+                    this.showMessage('✅ Arquivo .iaproject carregado com sucesso!', 'success');
+                    
+                } catch (error) {
+                    console.error('Erro ao ler arquivo .iaproject:', error);
+                    this.hideLoading();
+                    this.showMessage('❌ Erro ao ler arquivo .iaproject. Certifique-se de que é um arquivo válido.', 'error');
+                }
+            }
+            
+            displayIAProjectPreview(iaproject) {
+                const preview = document.getElementById('restorePreview');
+                const data = iaproject.iaproject;
+                
+                let html = `
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                        <h4 style="margin-bottom: 15px; color: var(--primary);">
+                            <i class="fas fa-info-circle"></i> Informações do Projeto
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                `;
+                
+                if (data.metadata) {
+                    html += `
+                        <div><strong>Nome:</strong> ${data.metadata.name || 'Não identificado'}</div>
+                        <div><strong>Arquivos:</strong> ${data.metadata.total_files || 0}</div>
+                        <div><strong>Imagens:</strong> ${data.metadata.image_count || 0}</div>
+                        <div><strong>Tamanho:</strong> ${this.formatFileSize(data.metadata.total_size || 0)}</div>
+                    `;
+                }
+                
+                html += `
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <strong>Gerado em:</strong> ${new Date(data.created || new Date()).toLocaleString()}
+                        </div>
+                    </div>
+                `;
+                
+                preview.innerHTML = html;
+            }
+            
+            async restoreProject() {
+                const fileInput = document.getElementById('iaprojectInput');
+                if (!fileInput.files[0]) {
+                    this.showMessage('❌ Selecione um arquivo .iaproject primeiro.', 'error');
+                    return;
+                }
+                
+                this.showLoading('Restaurando projeto...', 'Criando estrutura de arquivos e convertendo Base64 para imagens');
+                
+                try {
+                    const text = await fileInput.files[0].text();
+                    const iaproject = JSON.parse(text);
+                    
+                    // Criar ZIP com todos os arquivos
+                    const JSZip = window.JSZip;
+                    if (!JSZip) {
+                        // Carregar JSZip dinamicamente
+                        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+                    }
+                    
+                    const zip = new JSZip();
+                    const data = iaproject.iaproject;
+                    
+                    // Adicionar arquivos de texto
+                    if (data.files) {
+                        Object.entries(data.files).forEach(([path, fileData]) => {
+                            zip.file(path, fileData.content);
+                        });
+                    }
+                    
+                    // Adicionar imagens (converter Base64 para binário)
+                    if (data.images) {
+                        Object.entries(data.images).forEach(([path, imageData]) => {
+                            // Converter Base64 para binário
+                            const binary = atob(imageData.base64);
+                            const array = new Uint8Array(binary.length);
+                            for (let i = 0; i < binary.length; i++) {
+                                array[i] = binary.charCodeAt(i);
+                            }
+                            zip.file(path, array);
+                        });
+                    }
+                    
+                    // Gerar e baixar ZIP
+                    const content = await zip.generateAsync({ type: 'blob' });
+                    const url = URL.createObjectURL(content);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${data.metadata?.name || 'restored_project'}_restored.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    this.hideLoading();
+                    this.showMessage('✅ Projeto restaurado com sucesso! Baixe o arquivo ZIP e extraia para obter todos os arquivos.', 'success');
+                    
+                } catch (error) {
+                    console.error('Erro ao restaurar projeto:', error);
+                    this.hideLoading();
+                    this.showMessage('❌ Erro ao restaurar projeto. ' + error.message, 'error');
+                }
+            }
+            
+            // ========== UTILITÁRIOS ==========
+            getFileType(filename) {
+                const ext = filename.split('.').pop().toLowerCase();
+                const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'ico', 'svg', 'webp', 'tiff'];
+                const codeExts = ['html', 'htm', 'css', 'js', 'ts', 'jsx', 'tsx', 'json', 'xml', 'php', 'py', 'java', 'cpp', 'c', 'cs', 'rb', 'go'];
+                
+                if (imageExts.includes(ext)) return 'image';
+                if (codeExts.includes(ext)) return ext;
+                return 'other';
+            }
+            
+            isTextFile(extension) {
+                const textExtensions = ['html', 'htm', 'css', 'js', 'ts', 'jsx', 'tsx', 'json', 'xml', 'txt', 'md', 'php', 'py', 'java', 'cpp', 'c', 'cs', 'rb', 'go', 'sh', 'bat', 'yml', 'yaml', 'env'];
+                return textExtensions.includes(extension);
+            }
+            
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            fileToBase64(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = error => reject(error);
+                });
+            }
+            
+            detectProjectName() {
+                // Tenta detectar o nome do projeto pela estrutura
+                const commonNames = ['index.html', 'package.json', 'README.md', 'manifest.json'];
+                
+                for (const file of this.project.files) {
+                    if (commonNames.includes(file.name)) {
+                        if (file.name === 'package.json') {
+                            try {
+                                // Tentar ler package.json
+                                const reader = new FileReader();
+                                return new Promise(resolve => {
+                                    reader.onload = (e) => {
+                                        try {
+                                            const pkg = JSON.parse(e.target.result);
+                                            resolve(pkg.name || 'unknown');
+                                        } catch {
+                                            resolve('web_project');
+                                        }
+                                    };
+                                    reader.readAsText(file.file);
+                                });
+                            } catch {
+                                return 'web_project';
+                            }
+                        }
+                        return file.name.replace('.html', '').replace('.md', '').replace('.json', '');
+                    }
+                }
+                
+                return 'web_project';
+            }
+            
+            detectProjectType() {
+                // Detectar tipo de projeto pela estrutura de arquivos
+                const extensions = new Set(this.project.files.map(f => f.extension));
+                
+                if (extensions.has('package.json')) return 'node_js';
+                if (extensions.has('composer.json')) return 'php';
+                if (extensions.has('requirements.txt')) return 'python';
+                if (extensions.has('pom.xml')) return 'java';
+                if (extensions.has('csproj')) return 'csharp';
+                if (extensions.has('go.mod')) return 'go';
+                
+                // Web projects
+                if (extensions.has('html') || extensions.has('htm')) {
+                    if (extensions.has('js') && extensions.has('css')) return 'static_website';
+                    if (extensions.has('vue')) return 'vue_js';
+                    if (extensions.has('jsx') || extensions.has('tsx')) return 'react';
+                    if (extensions.has('php')) return 'php_website';
+                }
+                
+                return 'web_project';
+            }
+            
+            generateStructureHash() {
+                // Gerar hash simples da estrutura para identificar mudanças
+                const structureString = JSON.stringify(this.project.structure);
+                let hash = 0;
+                for (let i = 0; i < structureString.length; i++) {
+                    const char = structureString.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                }
+                return Math.abs(hash).toString(16);
+            }
+            
+            generateAIPrompt() {
+                const type = this.detectProjectType();
+                const fileCount = this.project.metadata.totalFiles;
+                const imageCount = this.project.metadata.imageCount;
+                
+                return `Analise este projeto ${type} com ${fileCount} arquivos (${imageCount} imagens). 
+                
+Sugestões de análise:
+1. Revise a estrutura do projeto
+2. Verifique possíveis problemas no código
+3. Sugira melhorias de performance
+4. Analise as imagens (tamanho, formato, otimização)
+5. Sugira refatorações se necessário
+
+O projeto está completamente estruturado no formato .iaproject com imagens em Base64.`;
+            }
+            
+            async loadScript(src) {
+                return new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = src;
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            }
+            
+            // ========== UI UPDATES ==========
+            updateFileList() {
+                const fileList = document.getElementById('fileList');
+                fileList.innerHTML = '';
+                
+                this.project.files.slice(0, 50).forEach((file, index) => { // Limitar a 50 arquivos para performance
+                    const div = document.createElement('div');
+                    div.className = 'file-item';
+                    
+                    const icon = this.getFileIcon(file.type);
+                    const size = this.formatFileSize(file.size);
+                    
+                    div.innerHTML = `
+                        <div class="file-icon">
+                            <i class="fas ${icon}"></i>
+                        </div>
+                        <div class="file-name" title="${file.path}">${file.name}</div>
+                        <div class="file-size">${size}</div>
+                    `;
+                    
+                    fileList.appendChild(div);
+                });
+                
+                if (this.project.files.length > 50) {
+                    const more = document.createElement('div');
+                    more.className = 'file-item';
+                    more.innerHTML = `
+                        <div class="file-icon">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </div>
+                        <div class="file-name">... e mais ${this.project.files.length - 50} arquivos</div>
+                    `;
+                    fileList.appendChild(more);
+                }
+            }
+            
+            updateImageGrid() {
+                const imageGrid = document.getElementById('imageGrid');
+                const noImagesMessage = document.getElementById('noImagesMessage');
+                const imageCount = document.getElementById('imageCount');
+                
+                imageGrid.innerHTML = '';
+                imageCount.textContent = `(${this.project.images.length})`;
+                
+                if (this.project.images.length === 0) {
+                    noImagesMessage.style.display = 'block';
+                    return;
+                }
+                
+                noImagesMessage.style.display = 'none';
+                
+                this.project.images.forEach((image, index) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const div = document.createElement('div');
+                        div.className = 'image-item';
+                        div.title = image.path;
+                        div.addEventListener('click', () => this.showImageModal(index));
+                        
+                        div.innerHTML = `
+                            <img src="${e.target.result}" class="image-preview" alt="${image.name}">
+                            <div class="image-info">
+                                <div class="image-name">${image.name}</div>
+                                <div class="image-size">${this.formatFileSize(image.size)}</div>
+                            </div>
+                        `;
+                        
+                        imageGrid.appendChild(div);
+                    };
+                    reader.readAsDataURL(image.file);
+                });
+            }
+            
+            updateAnalysisResults() {
+                const tree = document.getElementById('structureTree');
+                tree.innerHTML = this.renderStructure(this.project.structure, 0);
+            }
+            
+            updateStats() {
+                const statsGrid = document.getElementById('statsGrid');
+                
+                statsGrid.innerHTML = `
+                    <div class="stat-item">
+                        <div class="stat-number">${this.project.metadata.totalFiles}</div>
+                        <div class="stat-label">Arquivos Totais</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${this.project.metadata.codeFiles}</div>
+                        <div class="stat-label">Arquivos de Código</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${this.project.metadata.imageCount}</div>
+                        <div class="stat-label">Imagens</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${this.formatFileSize(this.project.metadata.totalSize)}</div>
+                        <div class="stat-label">Tamanho Total</div>
+                    </div>
+                `;
+            }
+            
+            renderStructure(structure, depth = 0) {
+                let html = '';
+                const indent = '  '.repeat(depth);
+                
+                Object.keys(structure).sort((a, b) => {
+                    const aIsFolder = structure[a].type === 'folder';
+                    const bIsFolder = structure[b].type === 'folder';
+                    if (aIsFolder && !bIsFolder) return -1;
+                    if (!aIsFolder && bIsFolder) return 1;
+                    return a.localeCompare(b);
+                }).forEach(key => {
+                    const item = structure[key];
+                    
+                    if (item.type === 'folder') {
+                        html += `
+                            <div class="tree-item folder" style="margin-left: ${depth * 20}px;">
+                                <i class="fas fa-folder" style="color: #f39c12;"></i>
+                                ${key}/
+                            </div>
+                            ${this.renderStructure(item.contents, depth + 1)}
+                        `;
+                    } else {
+                        const icon = this.getFileIcon(item.fileType);
+                        const color = this.getFileColor(item.fileType);
+                        const size = this.formatFileSize(item.size);
+                        
+                        html += `
+                            <div class="tree-item file" style="margin-left: ${depth * 20}px;">
+                                <i class="fas ${icon}" style="color: ${color};"></i>
+                                ${key} <span style="color: #999; font-size: 0.8em;">(${size})</span>
+                            </div>
+                        `;
+                    }
+                });
+                
+                return html;
+            }
+            
+            getFileIcon(type) {
+                switch(type) {
+                    case 'image': return 'fa-image';
+                    case 'html': return 'fa-html5';
+                    case 'css': return 'fa-css3';
+                    case 'js': return 'fa-js';
+                    case 'json': return 'fa-code';
+                    case 'php': return 'fa-php';
+                    case 'py': return 'fa-python';
+                    default: return 'fa-file';
+                }
+            }
+            
+            getFileColor(type) {
+                switch(type) {
+                    case 'image': return '#e74c3c';
+                    case 'html': return '#e44d26';
+                    case 'css': return '#264de4';
+                    case 'js': return '#f0db4f';
+                    case 'json': return '#3498db';
+                    default: return '#95a5a6';
+                }
+            }
+            
+            // ========== MODAL DE IMAGEM ==========
+            showImageModal(index) {
+                this.currentImageIndex = index;
+                const image = this.project.images[index];
+                
+                if (!image.base64) {
+                    this.showMessage('❌ Esta imagem precisa ser convertida para Base64 primeiro. Clique em "Gerar .iaproject".', 'error');
+                    return;
+                }
+                
+                const modal = document.getElementById('base64Modal');
+                const base64Code = document.getElementById('base64Code');
+                
+                // Mostrar apenas os primeiros 1000 caracteres do Base64
+                const preview = image.base64.substring(0, 1000) + '...';
+                base64Code.textContent = preview;
+                
+                modal.style.display = 'flex';
+            }
+            
+            copyBase64() {
+                const image = this.project.images[this.currentImageIndex];
+                navigator.clipboard.writeText(image.base64)
+                    .then(() => this.showMessage('✅ Base64 copiado para a área de transferência!', 'success'))
+                    .catch(err => {
+                        console.error('Erro ao copiar:', err);
+                        this.showMessage('❌ Erro ao copiar Base64', 'error');
+                    });
+            }
+            
+            updateBase64() {
+                const newBase64 = prompt('Cole o novo Base64 da imagem (modificado pela IA):');
+                if (newBase64 && newBase64.trim()) {
+                    this.project.images[this.currentImageIndex].base64 = newBase64.trim();
+                    this.showMessage('✅ Base64 atualizado com sucesso!', 'success');
+                    document.getElementById('base64Modal').style.display = 'none';
+                    
+                    // Atualizar preview da imagem
+                    const imageGrid = document.getElementById('imageGrid');
+                    const img = imageGrid.children[this.currentImageIndex].querySelector('img');
+                    img.src = newBase64.trim();
+                }
+            }
+            
+            downloadImage() {
+                const image = this.project.images[this.currentImageIndex];
+                const link = document.createElement('a');
+                link.href = image.base64;
+                link.download = image.name;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            
+            // ========== HELPERS ==========
+            resetProject() {
+                this.project = {
+                    files: [],
+                    images: [],
+                    structure: {},
+                    metadata: {
+                        totalFiles: 0,
+                        totalSize: 0,
+                        fileTypes: {},
+                        imageCount: 0,
+                        codeFiles: 0
+                    }
+                };
+            }
+            
+            showLoading(title, text) {
+                document.getElementById('loadingTitle').textContent = title;
+                document.getElementById('loadingText').textContent = text;
+                document.getElementById('loadingOverlay').style.display = 'block';
+            }
+            
+            hideLoading() {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+            
+            showMessage(text, type = 'success') {
+                const message = document.getElementById('exportMessage');
+                message.textContent = text;
+                message.className = `message ${type}`;
+                message.style.display = 'block';
+                
+                // Auto-esconder após 5 segundos
+                setTimeout(() => {
+                    message.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Inicializar o sistema quando a página carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            window.projectAnalyzer = new ProjectAnalyzer();
+            console.log('✅ Project Analyzer inicializado!');
+        });
+    </script>
+    
+    <!-- JSZip para criar arquivos ZIP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</body>
+</html>

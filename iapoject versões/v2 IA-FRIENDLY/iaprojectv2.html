@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA Project Exporter - Estrutura Visual</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            text-align: center;
+            margin-bottom: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin: 12px 0;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            font-size: 1.3rem;
+            margin-bottom: 16px;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 16px;
+            padding: 48px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8fafc;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #eef2ff;
+        }
+
+        .upload-area.drag-over {
+            border-color: #10b981;
+            background: #ecfdf5;
+        }
+
+        .file-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 16px;
+            font-size: 0.8rem;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.85rem;
+        }
+
+        /* ESTRUTURA VISUAL - ESTILO VS CODE */
+        .structure-container {
+            background: #1e1e2e;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
+        .tree-node {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        .tree-node li {
+            list-style: none;
+            position: relative;
+            padding-left: 24px;
+            margin: 2px 0;
+        }
+
+        .tree-node li::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: #4a5568;
+        }
+
+        .tree-node li:last-child::before {
+            height: 12px;
+        }
+
+        .tree-node .folder-node {
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+            padding: 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tree-node .file-node {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 0;
+            color: #cbd5e1;
+        }
+
+        .folder-node .toggle {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            text-align: center;
+            line-height: 14px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .folder-node .folder-name {
+            color: #60a5fa;
+            font-weight: 500;
+        }
+
+        .folder-node .folder-name:hover {
+            color: #93c5fd;
+        }
+
+        .file-node .file-name {
+            color: #cbd5e1;
+        }
+
+        .file-node .file-name:hover {
+            color: #e2e8f0;
+        }
+
+        .file-icon, .folder-icon {
+            font-size: 0.9rem;
+        }
+
+        .children {
+            margin-left: 20px;
+            padding-left: 8px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .stat-card {
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #6b7280;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+            transform: translateY(-2px);
+        }
+
+        .btn-full {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 16px 0;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin: 16px 0;
+            display: none;
+        }
+
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .json-preview {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.7rem;
+            max-height: 400px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 32px;
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid #e5e7eb;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 0.85rem;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .structure-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .expand-all {
+            background: #e2e8f0;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+
+        .expand-all:hover {
+            background: #cbd5e1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="badge">🎯 Otimizado para ChatGPT / Claude / Gemini</span>
+            <h1>📦 IA Project Exporter</h1>
+            <p style="color: #6b7280;">Visualize a estrutura completa do projeto e exporte para JSON</p>
+        </div>
+
+        <div class="grid-2">
+            <!-- Coluna Esquerda -->
+            <div class="card">
+                <h2>📁 1. Upload do Projeto</h2>
+                
+                <div class="upload-area" id="dropArea">
+                    <div style="font-size: 3rem;">📂</div>
+                    <div style="font-weight: 600; margin-top: 8px;">Arraste sua pasta aqui</div>
+                    <div style="font-size: 0.8rem; color: #6b7280;">ou clique para selecionar</div>
+                    <input type="file" id="folderInput" webkitdirectory multiple style="display: none;">
+                </div>
+
+                <div class="file-list" id="fileList"></div>
+
+                <button class="btn btn-primary btn-full" id="analyzeBtn" disabled>
+                    🔍 Analisar Projeto
+                </button>
+            </div>
+
+            <!-- Coluna Direita -->
+            <div class="card">
+                <h2>🌳 2. Estrutura do Projeto</h2>
+                
+                <div id="structurePanel" style="display: none;">
+                    <div class="stats" id="stats"></div>
+                    
+                    <div class="structure-header">
+                        <span style="font-size: 0.85rem; color: #6b7280;">📂 Navegue pela estrutura</span>
+                        <button class="expand-all" id="expandAllBtn">Expandir Tudo</button>
+                    </div>
+                    
+                    <input type="text" class="search-box" id="searchStructure" placeholder="🔍 Buscar arquivos ou pastas...">
+                    
+                    <div class="structure-container" id="structureTree">
+                        <!-- Árvore de estrutura será renderizada aqui -->
+                    </div>
+                </div>
+
+                <div id="noStructureMessage" style="text-align: center; padding: 40px; color: #9ca3af;">
+                    ⬅️ Selecione uma pasta e clique em "Analisar Projeto"
+                </div>
+            </div>
+        </div>
+
+        <!-- Card de Exportação -->
+        <div class="card" id="exportCard" style="display: none;">
+            <h2>⚙️ 3. Exportar para IA</h2>
+            
+            <div style="background: #f0fdf4; padding: 12px; border-radius: 12px; margin-bottom: 16px;">
+                <p style="font-size: 0.85rem; color: #166534;">
+                    <strong>📌 O que vai no JSON:</strong><br>
+                    • <strong>Código fonte</strong> (HTML, CSS, JS, etc.) → conteúdo COMPLETO<br>
+                    • <strong>Imagens</strong> → apenas nome, caminho e tamanho (sem Base64)<br>
+                    • <strong>Estrutura</strong> → pastas e arquivos organizados<br>
+                    • <strong>Contexto</strong> → análise automática para IA
+                </p>
+            </div>
+
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-success" id="exportBtn" disabled style="flex: 1;">
+                    📥 Baixar JSON
+                </button>
+                <button class="btn btn-secondary" id="copyJsonBtn" disabled style="flex: 1;">
+                    📋 Copiar JSON
+                </button>
+            </div>
+
+            <div id="message" class="message"></div>
+        </div>
+
+        <!-- Card de Preview -->
+        <div class="card" id="jsonPreviewCard" style="display: none;">
+            <h2>📄 Preview do JSON</h2>
+            <div class="json-preview" id="jsonPreview"></div>
+            <p style="font-size: 0.8rem; color: #6b7280; margin-top: 12px;">
+                💡 O JSON completo foi baixado/copiado. Cole no chat com a IA para análise completa!
+            </p>
+        </div>
+    </div>
+
+    <div class="loading" id="loading">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div id="loadingText">Processando...</div>
+        </div>
+    </div>
+
+    <script>
+        class IAProjectExporter {
+            constructor() {
+                this.files = [];
+                this.projectData = null;
+                this.structureTree = null;
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                const dropArea = document.getElementById('dropArea');
+                const folderInput = document.getElementById('folderInput');
+
+                dropArea.addEventListener('click', () => folderInput.click());
+                dropArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropArea.classList.add('drag-over');
+                });
+                dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
+                dropArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropArea.classList.remove('drag-over');
+                    this.handleDrop(e);
+                });
+
+                folderInput.addEventListener('change', (e) => this.handleFiles(e.target.files));
+                document.getElementById('analyzeBtn').addEventListener('click', () => this.analyzeProject());
+                document.getElementById('exportBtn').addEventListener('click', () => this.exportToJSON());
+                document.getElementById('copyJsonBtn').addEventListener('click', () => this.copyJSON());
+                document.getElementById('expandAllBtn').addEventListener('click', () => this.expandAllFolders());
+                document.getElementById('searchStructure').addEventListener('input', (e) => this.searchStructure(e.target.value));
+            }
+
+            async handleDrop(e) {
+                const items = e.dataTransfer.items;
+                const files = [];
+                for (const item of items) {
+                    if (item.kind === 'file') {
+                        const entry = item.webkitGetAsEntry();
+                        await this.traverseDirectory(entry, files);
+                    }
+                }
+                this.handleFiles(files);
+            }
+
+            async traverseDirectory(entry, files, path = '') {
+                if (entry.isFile) {
+                    const file = await new Promise(resolve => entry.file(resolve));
+                    file.relativePath = path + entry.name;
+                    files.push(file);
+                } else if (entry.isDirectory) {
+                    const reader = entry.createReader();
+                    const entries = await new Promise(resolve => reader.readEntries(resolve));
+                    for (const child of entries) {
+                        await this.traverseDirectory(child, files, path + entry.name + '/');
+                    }
+                }
+            }
+
+            handleFiles(files) {
+                this.files = Array.from(files);
+                this.updateFileList();
+                document.getElementById('analyzeBtn').disabled = false;
+                this.showMessage(`${this.files.length} arquivos carregados! Clique em "Analisar Projeto".`, 'success');
+            }
+
+            updateFileList() {
+                const container = document.getElementById('fileList');
+                container.innerHTML = '';
+                
+                const byType = {};
+                for (const file of this.files) {
+                    const ext = this.getExtension(file.name);
+                    byType[ext] = (byType[ext] || 0) + 1;
+                }
+
+                container.innerHTML = `
+                    <div style="margin-bottom: 12px; padding: 8px; background: #f8fafc; border-radius: 8px;">
+                        <strong>📊 ${this.files.length} arquivos carregados</strong><br>
+                        ${Object.entries(byType).slice(0, 8).map(([ext, count]) => 
+                            `<span style="display: inline-block; margin: 2px 4px; background: #e2e8f0; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem;">.${ext}: ${count}</span>`
+                        ).join('')}
+                    </div>
+                `;
+            }
+
+            async analyzeProject() {
+                this.showLoading('Analisando estrutura do projeto...');
+                
+                const metadata = {
+                    total_files: this.files.length,
+                    total_size: this.files.reduce((sum, f) => sum + f.size, 0),
+                    file_types: {},
+                    image_count: 0,
+                    code_count: 0
+                };
+
+                for (const file of this.files) {
+                    const ext = this.getExtension(file.name);
+                    metadata.file_types[ext] = (metadata.file_types[ext] || 0) + 1;
+                    if (this.isImageFile(file.name)) metadata.image_count++;
+                    else if (this.isTextFile(ext)) metadata.code_count++;
+                }
+
+                const structure = this.buildStructure();
+                const entryPoints = this.detectEntryPoints();
+
+                this.projectData = {
+                    metadata,
+                    structure,
+                    entryPoints,
+                    files: this.files
+                };
+
+                // Renderizar estrutura visual
+                this.renderStructureTree(structure);
+                
+                // Mostrar stats
+                this.displayStats(metadata);
+                
+                document.getElementById('structurePanel').style.display = 'block';
+                document.getElementById('noStructureMessage').style.display = 'none';
+                document.getElementById('exportCard').style.display = 'block';
+                document.getElementById('exportBtn').disabled = false;
+                document.getElementById('copyJsonBtn').disabled = false;
+                
+                this.hideLoading();
+                this.showMessage('✅ Análise concluída! Estrutura exibida abaixo.', 'success');
+            }
+
+            buildStructure() {
+                const structure = {};
+                for (const file of this.files) {
+                    const path = (file.relativePath || file.name).split('/');
+                    let current = structure;
+                    for (let i = 0; i < path.length; i++) {
+                        const part = path[i];
+                        if (i === path.length - 1) {
+                            current[part] = {
+                                type: 'file',
+                                size: file.size,
+                                ext: this.getExtension(part),
+                                isImage: this.isImageFile(part),
+                                path: file.relativePath || file.name
+                            };
+                        } else {
+                            if (!current[part]) current[part] = { type: 'folder', children: {} };
+                            current = current[part].children;
+                        }
+                    }
+                }
+                return structure;
+            }
+
+            renderStructureTree(structure, container = null, level = 0) {
+                const treeContainer = container || document.getElementById('structureTree');
+                if (!container) treeContainer.innerHTML = '';
+                
+                const ul = document.createElement('ul');
+                ul.className = 'tree-node';
+                
+                const sortedKeys = Object.keys(structure).sort((a, b) => {
+                    const aIsFolder = structure[a].type === 'folder';
+                    const bIsFolder = structure[b].type === 'folder';
+                    if (aIsFolder && !bIsFolder) return -1;
+                    if (!aIsFolder && bIsFolder) return 1;
+                    return a.localeCompare(b);
+                });
+                
+                for (const key of sortedKeys) {
+                    const item = structure[key];
+                    const li = document.createElement('li');
+                    
+                    if (item.type === 'folder') {
+                        // Pasta
+                        const folderDiv = document.createElement('div');
+                        folderDiv.className = 'folder-node';
+                        folderDiv.setAttribute('data-path', key);
+                        
+                        const toggle = document.createElement('span');
+                        toggle.className = 'toggle';
+                        toggle.textContent = '▼';
+                        toggle.onclick = (e) => {
+                            e.stopPropagation();
+                            this.toggleFolder(childrenDiv);
+                            toggle.textContent = childrenDiv.style.display === 'none' ? '▼' : '▶';
+                        };
+                        
+                        const icon = document.createElement('span');
+                        icon.className = 'folder-icon';
+                        icon.textContent = '📁';
+                        
+                        const name = document.createElement('span');
+                        name.className = 'folder-name';
+                        name.textContent = key;
+                        
+                        folderDiv.appendChild(toggle);
+                        folderDiv.appendChild(icon);
+                        folderDiv.appendChild(name);
+                        li.appendChild(folderDiv);
+                        
+                        const childrenDiv = document.createElement('div');
+                        childrenDiv.className = 'children';
+                        childrenDiv.style.display = 'block';
+                        
+                        this.renderStructureTree(item.children, childrenDiv, level + 1);
+                        li.appendChild(childrenDiv);
+                    } else {
+                        // Arquivo
+                        const fileDiv = document.createElement('div');
+                        fileDiv.className = 'file-node';
+                        
+                        const icon = document.createElement('span');
+                        icon.className = 'file-icon';
+                        icon.textContent = this.getFileIcon(item.ext);
+                        
+                        const name = document.createElement('span');
+                        name.className = 'file-name';
+                        name.textContent = `${key} ${this.formatSize(item.size)}`;
+                        name.title = item.path || key;
+                        
+                        fileDiv.appendChild(icon);
+                        fileDiv.appendChild(name);
+                        li.appendChild(fileDiv);
+                    }
+                    
+                    ul.appendChild(li);
+                }
+                
+                if (container) {
+                    container.appendChild(ul);
+                } else {
+                    treeContainer.appendChild(ul);
+                }
+            }
+
+            toggleFolder(childrenDiv) {
+                if (childrenDiv.style.display === 'none') {
+                    childrenDiv.style.display = 'block';
+                } else {
+                    childrenDiv.style.display = 'none';
+                }
+            }
+
+            expandAllFolders() {
+                const allChildren = document.querySelectorAll('.children');
+                const allToggles = document.querySelectorAll('.toggle');
+                
+                allChildren.forEach(child => child.style.display = 'block');
+                allToggles.forEach(toggle => toggle.textContent = '▼');
+            }
+
+            searchStructure(searchTerm) {
+                if (!searchTerm.trim()) {
+                    // Mostrar tudo
+                    const allItems = document.querySelectorAll('.file-node, .folder-node');
+                    allItems.forEach(item => {
+                        item.style.display = 'flex';
+                    });
+                    return;
+                }
+                
+                const term = searchTerm.toLowerCase();
+                const allItems = document.querySelectorAll('.file-node, .folder-node');
+                
+                allItems.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    if (text.includes(term)) {
+                        item.style.display = 'flex';
+                        // Expandir pais
+                        let parent = item.parentElement;
+                        while (parent) {
+                            if (parent.classList && parent.classList.contains('children')) {
+                                parent.style.display = 'block';
+                                const prevToggle = parent.previousElementSibling?.querySelector('.toggle');
+                                if (prevToggle) prevToggle.textContent = '▼';
+                            }
+                            parent = parent.parentElement;
+                        }
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            }
+
+            displayStats(metadata) {
+                document.getElementById('stats').innerHTML = `
+                    <div class="stat-card"><div class="stat-number">${metadata.total_files}</div><div class="stat-label">Total Arquivos</div></div>
+                    <div class="stat-card"><div class="stat-number">${metadata.code_count}</div><div class="stat-label">Arquivos Código</div></div>
+                    <div class="stat-card"><div class="stat-number">${metadata.image_count}</div><div class="stat-label">Imagens</div></div>
+                    <div class="stat-card"><div class="stat-number">${this.formatSize(metadata.total_size)}</div><div class="stat-label">Tamanho Total</div></div>
+                `;
+            }
+
+            async exportToJSON() {
+                if (!this.projectData) {
+                    this.showMessage('Primeiro analise o projeto!', 'error');
+                    return;
+                }
+
+                this.showLoading('Gerando JSON para IA...');
+                const progressBar = document.getElementById('progressBar');
+                const progressFill = document.getElementById('progressFill');
+                progressBar.style.display = 'block';
+
+                const iaJson = {
+                    project_info: {
+                        name: this.detectProjectName(),
+                        exported_at: new Date().toISOString(),
+                        format: "ia_project_optimized_for_ai",
+                        version: "2.0",
+                        note: "Imagens incluem apenas metadados (sem Base64) para manter o JSON leve"
+                    },
+                    metadata: this.projectData.metadata,
+                    entry_points: this.projectData.entryPoints,
+                    structure: this.projectData.structure,
+                    files: {},
+                    images_metadata: []
+                };
+
+                let processed = 0;
+                const totalFiles = this.files.length;
+
+                for (const file of this.files) {
+                    const ext = this.getExtension(file.name);
+                    const path = file.relativePath || file.name;
+                    
+                    if (this.isImageFile(file.name)) {
+                        iaJson.images_metadata.push({
+                            path: path,
+                            name: file.name,
+                            size: file.size,
+                            type: ext
+                        });
+                    } else if (this.isTextFile(ext)) {
+                        try {
+                            const content = await file.text();
+                            iaJson.files[path] = {
+                                content: content.length > 500000 ? content.substring(0, 500000) + "\n\n... [ARQUIVO TRUNCADO - MUITO GRANDE]" : content,
+                                type: ext,
+                                size: file.size,
+                                isTruncated: content.length > 500000
+                            };
+                        } catch (e) {
+                            iaJson.files[path] = { error: "Não foi possível ler o arquivo", type: ext };
+                        }
+                    }
+                    
+                    processed++;
+                    progressFill.style.width = `${(processed / totalFiles) * 100}%`;
+                }
+
+                iaJson.ai_context = this.generateAIContext();
+                iaJson.suggested_prompt = this.generateSuggestedPrompt();
+
+                const jsonString = JSON.stringify(iaJson, null, 2);
+                
+                // Download do arquivo
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${this.detectProjectName().toLowerCase().replace(/ /g, '_')}_${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                // Preview
+                document.getElementById('jsonPreview').textContent = jsonString.substring(0, 3000) + (jsonString.length > 3000 ? '\n\n... [JSON CONTINUA]' : '');
+                document.getElementById('jsonPreviewCard').style.display = 'block';
+                
+                this.generatedJSON = jsonString;
+                
+                progressBar.style.display = 'none';
+                this.hideLoading();
+                
+                const sizeKB = (jsonString.length / 1024).toFixed(1);
+                this.showMessage(`✅ JSON gerado e baixado! Tamanho: ${sizeKB} KB.`, 'success');
+            }
+
+            copyJSON() {
+                if (!this.generatedJSON) {
+                    this.showMessage('Nenhum JSON gerado ainda! Clique em "Baixar JSON" primeiro.', 'error');
+                    return;
+                }
+                
+                navigator.clipboard.writeText(this.generatedJSON).then(() => {
+                    this.showMessage('✅ JSON copiado! Agora cole no chat com a IA.', 'success');
+                }).catch(() => {
+                    this.showMessage('❌ Erro ao copiar. Selecione manualmente.', 'error');
+                });
+            }
+
+            detectEntryPoints() {
+                const entryPoints = { frontend: null, backend: null, config: null };
+                for (const file of this.files) {
+                    const name = file.name;
+                    const path = file.relativePath || file.name;
+                    if (name === 'index.html' || name === 'index.htm') entryPoints.frontend = path;
+                    if (name === 'package.json') entryPoints.config = path;
+                    if (name === 'server.js' || name === 'app.js' || name === 'main.py') entryPoints.backend = path;
+                }
+                return entryPoints;
+            }
+
+            detectProjectName() {
+                for (const file of this.files) {
+                    if (file.name === 'package.json') return 'Node.js_Project';
+                    if (file.name === 'index.html') return 'Web_Project';
+                }
+                return 'Project';
+            }
+
+            generateAIContext() {
+                const modules = [];
+                const patterns = ['auth', 'api', 'admin', 'user', 'config', 'database', 'utils'];
+                
+                for (const pattern of patterns) {
+                    const matchingFiles = this.files.filter(f => 
+                        (f.relativePath || f.name).toLowerCase().includes(pattern)
+                    );
+                    if (matchingFiles.length > 0) {
+                        modules.push({
+                            name: pattern,
+                            files: matchingFiles.slice(0, 5).map(f => f.relativePath || f.name),
+                            count: matchingFiles.length
+                        });
+                    }
+                }
+
+                return {
+                    total_modules: modules.length,
+                    detected_modules: modules,
+                    project_type: this.detectProjectType(),
+                    has_frontend: !!this.projectData?.entryPoints?.frontend,
+                    has_backend: !!this.projectData?.entryPoints?.backend
+                };
+            }
+
+            generateSuggestedPrompt() {
+                const metadata = this.projectData.metadata;
+                const entry = this.projectData.entryPoints;
+                
+                return `[INSTRUÇÃO PARA IA]
+Você está recebendo um projeto com:
+- ${metadata.total_files} arquivos no total
+- ${metadata.code_count} arquivos de código
+- ${metadata.image_count} imagens (apenas metadados)
+- Ponto de entrada frontend: ${entry.frontend || 'não detectado'}
+- Ponto de entrada backend: ${entry.backend || 'não detectado'}
+
+Por favor, analise este projeto e me ajude.`;
+            }
+
+            detectProjectType() {
+                const exts = new Set();
+                for (const file of this.files) exts.add(this.getExtension(file.name));
+                if (exts.has('html') && exts.has('css') && exts.has('js')) return 'Static Website';
+                if (exts.has('py')) return 'Python Project';
+                if (exts.has('json') && this.files.some(f => f.name === 'package.json')) return 'Node.js Project';
+                return 'Generic Project';
+            }
+
+            getExtension(filename) {
+                const parts = filename.split('.');
+                return parts.length > 1 ? parts.pop().toLowerCase() : 'unknown';
+            }
+
+            isTextFile(ext) {
+                const textExts = ['js', 'html', 'htm', 'css', 'json', 'txt', 'md', 'xml', 'yml', 'yaml', 'env', 'gitignore', 'jsx', 'ts', 'tsx', 'vue', 'php', 'py', 'rb', 'go'];
+                return textExts.includes(ext);
+            }
+
+            isImageFile(filename) {
+                const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico', 'bmp'];
+                return imageExts.includes(this.getExtension(filename));
+            }
+
+            getFileIcon(ext) {
+                const icons = {
+                    'js': '📜', 'html': '🌐', 'css': '🎨', 'json': '📋',
+                    'md': '📝', 'txt': '📄', 'xml': '📰', 'py': '🐍',
+                    'png': '🖼️', 'jpg': '🖼️', 'svg': '🎨'
+                };
+                return icons[ext] || '📄';
+            }
+
+            formatSize(bytes) {
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            }
+
+            showLoading(text) {
+                document.getElementById('loadingText').textContent = text;
+                document.getElementById('loading').style.display = 'flex';
+            }
+
+            hideLoading() {
+                document.getElementById('loading').style.display = 'none';
+            }
+
+            showMessage(text, type) {
+                const msg = document.getElementById('message');
+                msg.textContent = text;
+                msg.className = `message ${type}`;
+                msg.style.display = 'block';
+                setTimeout(() => msg.style.display = 'none', 5000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            window.exporter = new IAProjectExporter();
+        });
+    </script>
+</body>
+</html>
