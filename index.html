@@ -56,6 +56,40 @@
             gap: 8px;
         }
         
+        .title-with-button {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .title-with-button h2 {
+            margin-bottom: 0;
+        }
+        
+        .copy-structure-btn {
+            background: #334155;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        
+        .copy-structure-btn:hover {
+            background: #475569;
+            transform: scale(1.02);
+        }
+        
+        .copy-structure-btn.copied {
+            background: #10b981;
+        }
+        
         .select-folder-area {
             border: 2px solid #cbd5e1;
             border-radius: 16px;
@@ -298,6 +332,32 @@
             -webkit-text-fill-color: transparent;
             font-weight: bold;
         }
+        
+        .toast-notification {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            z-index: 2000;
+            animation: fadeInUp 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
     </style>
 </head>
 <body>
@@ -329,7 +389,12 @@
             </div>
 
             <div class="card">
-                <h2>🌳 2. Estrutura do Projeto</h2>
+                <div class="title-with-button">
+                    <h2>🌳 2. Estrutura do Projeto</h2>
+                    <button class="copy-structure-btn" id="copyStructureBtn" disabled>
+                        📋 Copiar Estrutura
+                    </button>
+                </div>
                 <div id="structurePanel" style="display: none;">
                     <div class="stats" id="stats"></div>
                     <input type="text" class="search-box" id="searchStructure" placeholder="🔍 Buscar arquivos ou pastas...">
@@ -350,7 +415,7 @@
     </div>
 
     <script>
-        class IAProjectExporterV12 {
+        class IAProjectExporterV15 {
             constructor() {
                 this.files = [];
                 this.projectData = null;
@@ -377,20 +442,89 @@
                 document.getElementById('exportJsonBtn').addEventListener('click', () => this.exportToFile('json'));
                 document.getElementById('exportIaProjectBtn').addEventListener('click', () => this.exportToFile('iaproject'));
                 document.getElementById('searchStructure').addEventListener('input', (e) => this.searchStructure(e.target.value));
+                document.getElementById('copyStructureBtn').addEventListener('click', () => this.copyStructureToClipboard());
             }
 
-            countFolders(structure) {
-                let count = 0;
-                for (const key in structure) {
-                    if (structure[key].type === 'folder') {
-                        count++;
-                        // Contar subpastas recursivamente
-                        if (structure[key].children) {
-                            count += this.countFolders(structure[key].children);
+            // Função para gerar texto da árvore a partir da estrutura de dados
+            generateTreeText(structure, prefix = '', isLast = true) {
+                let result = '';
+                const keys = Object.keys(structure).sort((a, b) => {
+                    const aIsFolder = structure[a].type === 'folder';
+                    const bIsFolder = structure[b].type === 'folder';
+                    if (aIsFolder && !bIsFolder) return -1;
+                    if (!aIsFolder && bIsFolder) return 1;
+                    return a.localeCompare(b);
+                });
+                
+                for (let i = 0; i < keys.length; i++) {
+                    const key = keys[i];
+                    const item = structure[key];
+                    const isLastItem = i === keys.length - 1;
+                    
+                    if (item.type === 'folder') {
+                        // É uma pasta
+                        result += `${prefix}${isLastItem ? '└── ' : '├── '}📁 ${key}\n`;
+                        // Processar subpastas e arquivos dentro da pasta
+                        if (item.children && Object.keys(item.children).length > 0) {
+                            const newPrefix = prefix + (isLastItem ? '    ' : '│   ');
+                            result += this.generateTreeText(item.children, newPrefix);
                         }
+                    } else {
+                        // É um arquivo
+                        let icon = '📄';
+                        if (item.isImage) icon = '🖼️';
+                        else if (item.ext === 'js') icon = '📜';
+                        else if (item.ext === 'html') icon = '🌐';
+                        else if (item.ext === 'css') icon = '🎨';
+                        else if (item.ext === 'json') icon = '📋';
+                        
+                        const size = this.formatSize(item.size);
+                        result += `${prefix}${isLastItem ? '└── ' : '├── '}${icon} ${key} (${size})\n`;
                     }
                 }
-                return count;
+                return result;
+            }
+
+            copyStructureToClipboard() {
+                if (!this.projectData || !this.projectData.structure) {
+                    this.showToast('❌ Nenhuma estrutura para copiar! Analise um projeto primeiro.', 'error');
+                    return;
+                }
+
+                // Gerar a árvore completa a partir da estrutura de dados
+                const treeText = this.generateTreeText(this.projectData.structure);
+                
+                if (treeText) {
+                    const header = `📁 ${this.selectedFolderName || 'Projeto'}\n`;
+                    const finalText = header + treeText;
+                    
+                    navigator.clipboard.writeText(finalText).then(() => {
+                        const copyBtn = document.getElementById('copyStructureBtn');
+                        const originalText = copyBtn.innerHTML;
+                        copyBtn.innerHTML = '✅ Copiado!';
+                        copyBtn.classList.add('copied');
+                        this.showToast('📋 Estrutura completa copiada para área de transferência!', 'success');
+                        setTimeout(() => {
+                            copyBtn.innerHTML = originalText;
+                            copyBtn.classList.remove('copied');
+                        }, 2000);
+                    }).catch(() => {
+                        this.showToast('❌ Erro ao copiar estrutura', 'error');
+                    });
+                } else {
+                    this.showToast('❌ Nenhuma estrutura para copiar!', 'error');
+                }
+            }
+
+            showToast(message, type = 'success') {
+                const toast = document.createElement('div');
+                toast.className = 'toast-notification';
+                toast.style.background = type === 'success' ? '#10b981' : '#ef4444';
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
             }
 
             handleFolderSelect(files) {
@@ -403,12 +537,10 @@
                     const firstPath = fileArray[0].webkitRelativePath;
                     this.selectedFolderName = firstPath.split('/')[0];
                     
-                    // Contar pastas dentro do projeto (ignorando a raiz)
                     const foldersSet = new Set();
                     for (const file of fileArray) {
                         const relativePath = file.webkitRelativePath;
                         const parts = relativePath.split('/');
-                        // Se tem mais de 2 partes (raiz/pasta/arquivo), extrai a pasta
                         if (parts.length > 2) {
                             for (let i = 1; i < parts.length - 1; i++) {
                                 foldersSet.add(parts.slice(1, i + 1).join('/'));
@@ -507,6 +639,7 @@
                 document.getElementById('noStructureMessage').style.display = 'none';
                 document.getElementById('exportJsonBtn').disabled = false;
                 document.getElementById('exportIaProjectBtn').disabled = false;
+                document.getElementById('copyStructureBtn').disabled = false;
                 
                 this.hideLoading();
                 this.showMessage('✅ Análise concluída! Agora você pode baixar os arquivos.', 'success');
@@ -913,7 +1046,7 @@ O JSON contém TODO o código fonte nos arquivos listados.`;
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => { window.exporter = new IAProjectExporterV12(); });
+        document.addEventListener('DOMContentLoaded', () => { window.exporter = new IAProjectExporterV15(); });
     </script>
 </body>
 </html>
