@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA Project Exporter - Estrutura de Pastas</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        .header {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            text-align: center;
+            margin-bottom: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        
+        @media (max-width: 1024px) { .grid-2 { grid-template-columns: 1fr; } }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            font-size: 1.3rem;
+            margin-bottom: 16px;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .select-folder-area {
+            border: 2px solid #cbd5e1;
+            border-radius: 16px;
+            padding: 30px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8fafc;
+        }
+        
+        .select-folder-area:hover {
+            border-color: #667eea;
+            background: #eef2ff;
+        }
+        
+        .folder-info {
+            background: #f0fdf4;
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 16px;
+            font-size: 0.85rem;
+            color: #166534;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+        
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5a67d8; transform: translateY(-2px); }
+        .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+        
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; transform: translateY(-2px); }
+        .btn-success:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+        
+        .btn-secondary { background: #6b7280; color: white; }
+        .btn-secondary:hover { background: #4b5563; transform: translateY(-2px); }
+        .btn-secondary:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+        
+        .btn-full { width: 100%; margin-top: 20px; }
+        
+        .download-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .structure-container {
+            background: #1e1e2e;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+        
+        .tree-node {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+        
+        .tree-node li {
+            list-style: none;
+            position: relative;
+            padding-left: 24px;
+            margin: 2px 0;
+        }
+        
+        .tree-node li::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: #4a5568;
+        }
+        
+        .tree-node li:last-child::before {
+            height: 12px;
+        }
+        
+        .folder-node {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 0;
+            color: #60a5fa;
+            font-weight: 500;
+            border-radius: 6px;
+        }
+        
+        .folder-node:hover {
+            background: rgba(96, 165, 250, 0.15);
+        }
+        
+        .file-node {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0 4px 20px;
+            color: #cbd5e1;
+            border-radius: 6px;
+        }
+        
+        .file-node:hover {
+            background: rgba(203, 213, 225, 0.1);
+        }
+        
+        .toggle {
+            width: 18px;
+            height: 18px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 11px;
+            color: #94a3b8;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .toggle:hover { color: #60a5fa; }
+        
+        .children {
+            margin-left: 20px;
+            padding-left: 8px;
+        }
+        
+        .folder-icon { font-size: 1rem; }
+        .file-icon { font-size: 0.9rem; }
+        .file-size { color: #6b7280; font-size: 0.7rem; margin-left: 8px; }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin: 16px 0;
+        }
+        
+        .stat-card {
+            background: #f8fafc;
+            padding: 8px 4px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-number { font-size: 1rem; font-weight: bold; color: #667eea; }
+        .stat-label { font-size: 0.6rem; color: #6b7280; }
+        
+        .progress-bar {
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 16px 0;
+            display: none;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .message {
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin: 16px 0;
+            display: none;
+        }
+        
+        .message.success { background: #d1fae5; color: #065f46; }
+        .message.error { background: #fee2e2; color: #991b1b; }
+        
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .loading-content {
+            background: white;
+            padding: 32px;
+            border-radius: 20px;
+            text-align: center;
+        }
+        
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid #e5e7eb;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .search-box {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 0.85rem;
+            background: #2d2d3d;
+            color: white;
+        }
+        
+        .search-box::placeholder { color: #6b7280; }
+        .search-box:focus { outline: none; border-color: #667eea; }
+        
+        .highlight {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 IA Project Exporter</h1>
+            <p style="color: #6b7280;">Compilador de projetos em formatos <span class="highlight">.json</span> e <span class="highlight">.iaproject</span></p>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <h2>📁 1. Selecionar Pasta do Projeto</h2>
+                <div class="select-folder-area" id="selectFolderArea">
+                    <div style="font-size: 3rem;">📂</div>
+                    <div style="font-weight: 600; margin-top: 8px;">Clique para selecionar a pasta</div>
+                    <div style="font-size: 0.8rem; color: #6b7280;">Selecione a pasta raiz do seu projeto</div>
+                    <input type="file" id="folderInput" webkitdirectory multiple style="display: none;">
+                </div>
+                <div class="folder-info" id="folderInfo" style="display: none;"></div>
+                
+                <button class="btn btn-primary btn-full" id="analyzeBtn" disabled>🔍 Analisar Projeto</button>
+                
+                <div class="download-buttons">
+                    <button class="btn btn-success" id="exportJsonBtn" disabled style="flex:1;">📥 Baixar .json</button>
+                    <button class="btn btn-secondary" id="exportIaProjectBtn" disabled style="flex:1;">📦 Baixar .iaproject</button>
+                </div>
+                
+                <div id="message" class="message"></div>
+            </div>
+
+            <div class="card">
+                <h2>🌳 2. Estrutura do Projeto</h2>
+                <div id="structurePanel" style="display: none;">
+                    <div class="stats" id="stats"></div>
+                    <input type="text" class="search-box" id="searchStructure" placeholder="🔍 Buscar arquivos ou pastas...">
+                    <div class="structure-container" id="structureTree"></div>
+                </div>
+                <div id="noStructureMessage" style="text-align: center; padding: 40px; color: #9ca3af;">
+                    ⬅️ Selecione uma pasta e clique em "Analisar Projeto"
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading" id="loading">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div id="loadingText">Processando...</div>
+        </div>
+    </div>
+
+    <script>
+        class IAProjectExporterV12 {
+            constructor() {
+                this.files = [];
+                this.projectData = null;
+                this.generatedJSON = null;
+                this.selectedFolderName = '';
+                this.functionsCount = 0;
+                this.classesCount = 0;
+                this.foldersCount = 0;
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                const selectFolderArea = document.getElementById('selectFolderArea');
+                const folderInput = document.getElementById('folderInput');
+
+                selectFolderArea.addEventListener('click', () => folderInput.click());
+                folderInput.addEventListener('change', (e) => this.handleFolderSelect(e.target.files));
+                
+                document.getElementById('analyzeBtn').addEventListener('click', () => this.analyzeProject());
+                document.getElementById('exportJsonBtn').addEventListener('click', () => this.exportToFile('json'));
+                document.getElementById('exportIaProjectBtn').addEventListener('click', () => this.exportToFile('iaproject'));
+                document.getElementById('searchStructure').addEventListener('input', (e) => this.searchStructure(e.target.value));
+            }
+
+            countFolders(structure) {
+                let count = 0;
+                for (const key in structure) {
+                    if (structure[key].type === 'folder') {
+                        count++;
+                        // Contar subpastas recursivamente
+                        if (structure[key].children) {
+                            count += this.countFolders(structure[key].children);
+                        }
+                    }
+                }
+                return count;
+            }
+
+            handleFolderSelect(files) {
+                if (!files || files.length === 0) return;
+                
+                this.files = [];
+                const fileArray = Array.from(files);
+                
+                if (fileArray.length > 0 && fileArray[0].webkitRelativePath) {
+                    const firstPath = fileArray[0].webkitRelativePath;
+                    this.selectedFolderName = firstPath.split('/')[0];
+                    
+                    // Contar pastas dentro do projeto (ignorando a raiz)
+                    const foldersSet = new Set();
+                    for (const file of fileArray) {
+                        const relativePath = file.webkitRelativePath;
+                        const parts = relativePath.split('/');
+                        // Se tem mais de 2 partes (raiz/pasta/arquivo), extrai a pasta
+                        if (parts.length > 2) {
+                            for (let i = 1; i < parts.length - 1; i++) {
+                                foldersSet.add(parts.slice(1, i + 1).join('/'));
+                            }
+                        }
+                    }
+                    this.foldersCount = foldersSet.size;
+                    
+                    document.getElementById('folderInfo').innerHTML = `
+                        <strong>📁 Pasta selecionada:</strong> ${this.selectedFolderName}<br>
+                        <strong>📄 Arquivos encontrados:</strong> ${fileArray.length}<br>
+                        <strong>📂 Pastas encontradas:</strong> ${this.foldersCount}
+                    `;
+                    document.getElementById('folderInfo').style.display = 'block';
+                }
+                
+                for (const file of fileArray) {
+                    if (file.webkitRelativePath) {
+                        file.relativePath = file.webkitRelativePath;
+                    } else {
+                        file.relativePath = file.name;
+                    }
+                    this.files.push(file);
+                }
+                
+                document.getElementById('analyzeBtn').disabled = false;
+                this.showMessage(`${this.files.length} arquivos carregados! Clique em "Analisar Projeto".`, 'success');
+            }
+
+            countFunctionsAndClasses(content) {
+                let functions = 0;
+                let classes = 0;
+                
+                const classMatches = content.match(/class\s+\w+/g);
+                classes = classMatches ? classMatches.length : 0;
+                
+                const funcDeclarations = content.match(/function\s+\w+\s*\(/g);
+                functions += funcDeclarations ? funcDeclarations.length : 0;
+                
+                const arrowFunctions = content.match(/(?:const|let|var)\s+\w+\s*=\s*(?:\([^)]*\)|\w+)\s*=>/g);
+                functions += arrowFunctions ? arrowFunctions.length : 0;
+                
+                const anonymousFuncs = content.match(/function\s*\(/g);
+                functions += anonymousFuncs ? anonymousFuncs.length : 0;
+                
+                return { functions, classes };
+            }
+
+            async analyzeProject() {
+                this.showLoading('Analisando estrutura do projeto...');
+                
+                this.functionsCount = 0;
+                this.classesCount = 0;
+                
+                const metadata = {
+                    total_files: this.files.length,
+                    total_size: this.files.reduce((sum, f) => sum + f.size, 0),
+                    file_types: {},
+                    image_count: 0,
+                    code_count: 0,
+                    functions: 0,
+                    classes: 0,
+                    folders: this.foldersCount
+                };
+
+                for (const file of this.files) {
+                    const ext = this.getExtension(file.name);
+                    metadata.file_types[ext] = (metadata.file_types[ext] || 0) + 1;
+                    if (this.isImageFile(file.name)) {
+                        metadata.image_count++;
+                    } else if (this.isTextFile(ext)) {
+                        metadata.code_count++;
+                        if (ext === 'js') {
+                            try {
+                                const content = await file.text();
+                                const counts = this.countFunctionsAndClasses(content);
+                                metadata.functions += counts.functions;
+                                metadata.classes += counts.classes;
+                            } catch(e) {
+                                console.error('Erro ao ler arquivo:', file.name);
+                            }
+                        }
+                    }
+                }
+
+                const structure = this.buildStructure();
+                const entryPoints = this.detectEntryPoints();
+                const architecture = this.detectArchitecture();
+
+                this.projectData = { metadata, structure, entryPoints, architecture, files: this.files };
+                
+                this.renderStructureTree(structure);
+                this.displayStats(metadata);
+                
+                document.getElementById('structurePanel').style.display = 'block';
+                document.getElementById('noStructureMessage').style.display = 'none';
+                document.getElementById('exportJsonBtn').disabled = false;
+                document.getElementById('exportIaProjectBtn').disabled = false;
+                
+                this.hideLoading();
+                this.showMessage('✅ Análise concluída! Agora você pode baixar os arquivos.', 'success');
+            }
+
+            buildStructure() {
+                const structure = {};
+                for (const file of this.files) {
+                    const relativePath = file.relativePath || file.name;
+                    let pathParts = relativePath.split('/');
+                    
+                    if (pathParts.length > 1 && pathParts[0] === this.selectedFolderName) {
+                        pathParts = pathParts.slice(1);
+                    }
+                    
+                    let current = structure;
+                    
+                    for (let i = 0; i < pathParts.length; i++) {
+                        const part = pathParts[i];
+                        const isLast = i === pathParts.length - 1;
+                        
+                        if (isLast) {
+                            current[part] = {
+                                type: 'file',
+                                size: file.size,
+                                ext: this.getExtension(part),
+                                isImage: this.isImageFile(part),
+                                path: relativePath
+                            };
+                        } else {
+                            if (!current[part]) {
+                                current[part] = { type: 'folder', children: {} };
+                            }
+                            current = current[part].children;
+                        }
+                    }
+                }
+                return structure;
+            }
+
+            renderStructureTree(structure, container = null) {
+                const treeContainer = container || document.getElementById('structureTree');
+                if (!container) treeContainer.innerHTML = '';
+                const ul = document.createElement('ul');
+                ul.className = 'tree-node';
+                
+                const sortedKeys = Object.keys(structure).sort((a, b) => {
+                    const aIsFolder = structure[a].type === 'folder';
+                    const bIsFolder = structure[b].type === 'folder';
+                    if (aIsFolder && !bIsFolder) return -1;
+                    if (!aIsFolder && bIsFolder) return 1;
+                    return a.localeCompare(b);
+                });
+                
+                for (const key of sortedKeys) {
+                    const item = structure[key];
+                    const li = document.createElement('li');
+                    
+                    if (item.type === 'folder') {
+                        const folderDiv = document.createElement('div');
+                        folderDiv.className = 'folder-node';
+                        
+                        const toggle = document.createElement('span');
+                        toggle.className = 'toggle';
+                        toggle.textContent = '▼';
+                        
+                        const childrenDiv = document.createElement('div');
+                        childrenDiv.className = 'children';
+                        childrenDiv.style.display = 'block';
+                        
+                        toggle.onclick = (e) => {
+                            e.stopPropagation();
+                            const isVisible = childrenDiv.style.display !== 'none';
+                            childrenDiv.style.display = isVisible ? 'none' : 'block';
+                            toggle.textContent = isVisible ? '▶' : '▼';
+                        };
+                        
+                        folderDiv.appendChild(toggle);
+                        const folderIcon = document.createElement('span');
+                        folderIcon.className = 'folder-icon';
+                        folderIcon.textContent = '📁';
+                        folderDiv.appendChild(folderIcon);
+                        folderDiv.appendChild(document.createTextNode(' ' + key));
+                        li.appendChild(folderDiv);
+                        this.renderStructureTree(item.children, childrenDiv);
+                        li.appendChild(childrenDiv);
+                    } else {
+                        const fileDiv = document.createElement('div');
+                        fileDiv.className = 'file-node';
+                        const icon = item.isImage ? '🖼️' : this.getFileIcon(item.ext);
+                        const size = this.formatSize(item.size);
+                        fileDiv.innerHTML = `${icon} ${key} <span class="file-size">(${size})</span>`;
+                        li.appendChild(fileDiv);
+                    }
+                    ul.appendChild(li);
+                }
+                if (container) {
+                    container.appendChild(ul);
+                } else {
+                    treeContainer.appendChild(ul);
+                }
+            }
+
+            searchStructure(term) {
+                if (!term.trim()) {
+                    const allChildren = document.querySelectorAll('.children');
+                    const allToggles = document.querySelectorAll('.toggle');
+                    allChildren.forEach(child => child.style.display = 'block');
+                    allToggles.forEach(toggle => toggle.textContent = '▼');
+                    document.querySelectorAll('.folder-node, .file-node').forEach(el => el.style.display = 'flex');
+                    return;
+                }
+                
+                const lowerTerm = term.toLowerCase();
+                const allChildren = document.querySelectorAll('.children');
+                const allToggles = document.querySelectorAll('.toggle');
+                allChildren.forEach(child => child.style.display = 'block');
+                allToggles.forEach(toggle => toggle.textContent = '▼');
+                
+                document.querySelectorAll('.folder-node, .file-node').forEach(el => {
+                    const text = el.textContent.toLowerCase();
+                    if (text.includes(lowerTerm)) {
+                        el.style.display = 'flex';
+                        let parent = el.parentElement;
+                        while (parent) {
+                            if (parent.classList?.contains('children')) {
+                                parent.style.display = 'block';
+                            }
+                            parent = parent.parentElement;
+                        }
+                    } else {
+                        el.style.display = 'none';
+                    }
+                });
+            }
+
+            detectEntryPoints() {
+                const entryPoints = { frontend: null, backend: null, config: null, firebase: null };
+                for (const file of this.files) {
+                    const name = file.name;
+                    const path = file.relativePath || file.name;
+                    if (name === 'index.html' || name === 'index.htm') entryPoints.frontend = path;
+                    if (name === 'server.js' || name === 'app.js' || name === 'main.py') entryPoints.backend = path;
+                    if (name === 'package.json') entryPoints.config = path;
+                    if (name.includes('firebase') || name.includes('api_config')) entryPoints.firebase = path;
+                }
+                return entryPoints;
+            }
+
+            detectArchitecture() {
+                const hasFirebase = this.files.some(f => f.name.includes('firebase') || f.name.includes('api_config'));
+                const profiles = [];
+                if (this.files.some(f => f.name.includes('paciente') || f.name.includes('cliente'))) profiles.push('paciente');
+                if (this.files.some(f => f.name.includes('nutricionista'))) profiles.push('nutricionista');
+                if (this.files.some(f => f.name.includes('psicologo'))) profiles.push('psicologo');
+                
+                return {
+                    type: 'SPA_Web_App',
+                    framework: 'Vanilla JS + Firebase',
+                    hasFirebase: hasFirebase,
+                    detectedProfiles: profiles
+                };
+            }
+
+            displayStats(metadata) {
+                document.getElementById('stats').innerHTML = `
+                    <div class="stat-card"><div class="stat-number">${metadata.total_files}</div><div class="stat-label">Arquivos</div></div>
+                    <div class="stat-card"><div class="stat-number">${metadata.code_count}</div><div class="stat-label">Código</div></div>
+                    <div class="stat-card"><div class="stat-number">${metadata.image_count}</div><div class="stat-label">Imagens</div></div>
+                    <div class="stat-card"><div class="stat-number">${this.formatSize(metadata.total_size)}</div><div class="stat-label">Tamanho</div></div>
+                    <div class="stat-card"><div class="stat-number">${metadata.functions}</div><div class="stat-label">Funções</div></div>
+                    <div class="stat-card"><div class="stat-number">${metadata.classes}</div><div class="stat-label">Classes</div></div>
+                `;
+            }
+
+            async exportToFile(format) {
+                if (!this.projectData) {
+                    this.showMessage('Primeiro analise o projeto!', 'error');
+                    return;
+                }
+
+                this.showLoading('Gerando arquivo...');
+                const progressBar = document.getElementById('progressBar');
+                const progressFill = document.getElementById('progressFill');
+                if (progressBar) progressBar.style.display = 'block';
+
+                const iaJson = {
+                    project_info: {
+                        name: this.selectedFolderName || this.detectProjectName(),
+                        exported_at: new Date().toISOString(),
+                        format: format === 'json' ? 'json' : 'iaproject_v1',
+                        version: "1.0",
+                        description: format === 'iaproject' ? 
+                            "Arquivo completo para IA - contém TODO o código fonte para modificação" : 
+                            "Arquivo JSON com estrutura e metadados do projeto"
+                    },
+                    statistics: {
+                        total_files: this.projectData.metadata.total_files,
+                        total_size: this.projectData.metadata.total_size,
+                        total_size_formatted: this.formatSize(this.projectData.metadata.total_size),
+                        code_files: this.projectData.metadata.code_count,
+                        image_files: this.projectData.metadata.image_count,
+                        folders: this.projectData.metadata.folders,
+                        functions: this.projectData.metadata.functions,
+                        classes: this.projectData.metadata.classes,
+                        file_types: this.projectData.metadata.file_types
+                    },
+                    architecture: this.projectData.architecture,
+                    entry_points: this.projectData.entryPoints,
+                    structure: this.projectData.structure,
+                    files: {},
+                    images_metadata: []
+                };
+
+                let processed = 0;
+                const totalFiles = this.files.length;
+
+                for (const file of this.files) {
+                    const ext = this.getExtension(file.name);
+                    const path = file.relativePath || file.name;
+                    
+                    if (this.isImageFile(file.name)) {
+                        iaJson.images_metadata.push({
+                            path: path,
+                            name: file.name,
+                            size: file.size,
+                            size_formatted: this.formatSize(file.size),
+                            type: ext
+                        });
+                    } else if (this.isTextFile(ext)) {
+                        try {
+                            const content = await file.text();
+                            iaJson.files[path] = {
+                                content: content,
+                                type: ext,
+                                size: file.size,
+                                size_formatted: this.formatSize(file.size)
+                            };
+                        } catch (e) {
+                            iaJson.files[path] = { error: "Não foi possível ler o arquivo", type: ext };
+                        }
+                    }
+                    
+                    processed++;
+                    if (progressFill) progressFill.style.width = `${(processed / totalFiles) * 100}%`;
+                }
+
+                iaJson.ai_context = this.generateAIContext();
+                iaJson.suggested_prompt = this.generateSuggestedPrompt(format);
+
+                const jsonString = JSON.stringify(iaJson, null, 2);
+                const extension = format === 'json' ? 'json' : 'iaproject';
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${(this.selectedFolderName || 'projeto').toLowerCase().replace(/ /g, '_')}_${Date.now()}.${extension}`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                this.generatedJSON = jsonString;
+                if (progressBar) progressBar.style.display = 'none';
+                this.hideLoading();
+                
+                const sizeKB = (jsonString.length / 1024).toFixed(1);
+                this.showMessage(`✅ Arquivo ${extension.toUpperCase()} gerado! Tamanho: ${sizeKB} KB.`, 'success');
+            }
+
+            generateAIContext() {
+                const modules = [];
+                const jsFiles = this.files.filter(f => f.name.endsWith('.js'));
+                const patterns = {
+                    'firebase': 'firebase_config', 'home': 'dashboard',
+                    'cliente': 'paciente', 'nutricionista': 'nutricionista',
+                    'psicologo': 'psicologo', 'anamnese': 'anamnese',
+                    'plano': 'plano_alimentar', 'calculo': 'calculo_energetico',
+                    'login': 'autenticacao', 'cadastro': 'cadastro'
+                };
+                
+                const detected = new Set();
+                for (const file of jsFiles) {
+                    const name = file.name.toLowerCase();
+                    for (const [pattern, module] of Object.entries(patterns)) {
+                        if (name.includes(pattern) && !detected.has(module)) {
+                            detected.add(module);
+                            modules.push({ name: module, file: file.name });
+                        }
+                    }
+                }
+                
+                return {
+                    total_modules: modules.length,
+                    detected_modules: modules,
+                    project_type: this.detectProjectType(),
+                    has_frontend: !!this.projectData.entryPoints.frontend,
+                    has_firebase: this.projectData.architecture.hasFirebase,
+                    profiles: this.projectData.architecture.detectedProfiles
+                };
+            }
+
+            generateSuggestedPrompt(format) {
+                const arch = this.projectData.architecture;
+                const entry = this.projectData.entryPoints;
+                const stats = this.projectData.metadata;
+                
+                if (format === 'iaproject') {
+                    return `[INSTRUÇÃO PARA IA - ARQUIVO .IAPROJECT COMPLETO]
+
+Este arquivo .iaproject contém TODO o código fonte do projeto.
+
+📊 ESTATÍSTICAS DO PROJETO:
+- Total de arquivos: ${stats.total_files}
+- Pastas encontradas: ${stats.folders}
+- Arquivos de código: ${stats.code_count}
+- Imagens: ${stats.image_count}
+- Funções JavaScript: ${stats.functions}
+- Classes JavaScript: ${stats.classes}
+- Tamanho total: ${this.formatSize(stats.total_size)}
+
+🏗️ ARQUITETURA:
+- Tipo: ${arch.type}
+- Framework: ${arch.framework}
+- Firebase: ${arch.hasFirebase ? 'Sim' : 'Não'}
+- Perfis detectados: ${arch.detectedProfiles.join(', ')}
+
+📂 PONTOS DE ENTRADA:
+- Frontend: ${entry.frontend || 'index.html'}
+- Firebase Config: ${entry.firebase || 'detectado'}
+
+🔧 O QUE VOCÊ PODE FAZER COM ESTE ARQUIVO:
+- Analisar e modificar QUALQUER arquivo de código
+- Sugerir melhorias de arquitetura
+- Refatorar código
+- Corrigir bugs
+- Adicionar novas funcionalidades
+- Otimizar performance
+
+Para modificar um arquivo, altere o conteúdo no campo "content" do arquivo correspondente.`;
+                } else {
+                    return `[INSTRUÇÃO PARA IA - ARQUIVO JSON]
+
+Projeto: ${this.selectedFolderName}
+Pastas: ${stats.folders} | Arquivos: ${stats.total_files}
+Funções: ${stats.functions} | Classes: ${stats.classes}
+Frontend: ${entry.frontend || 'index.html'}
+
+O JSON contém TODO o código fonte nos arquivos listados.`;
+                }
+            }
+
+            detectProjectName() {
+                if (this.files.some(f => f.name === 'index.html')) return 'TratamentoWeb';
+                return 'Web_Project';
+            }
+
+            detectProjectType() {
+                const exts = new Set();
+                for (const file of this.files) exts.add(this.getExtension(file.name));
+                if (exts.has('html') && exts.has('css') && exts.has('js')) return 'Static Website (SPA)';
+                return 'Web Application';
+            }
+
+            getExtension(filename) {
+                const parts = filename.split('.');
+                return parts.length > 1 ? parts.pop().toLowerCase() : 'unknown';
+            }
+
+            isTextFile(ext) {
+                const textExts = ['js', 'html', 'htm', 'css', 'json', 'txt', 'md', 'xml', 'yml', 'yaml'];
+                return textExts.includes(ext);
+            }
+
+            isImageFile(filename) {
+                const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico', 'bmp'];
+                return imageExts.includes(this.getExtension(filename));
+            }
+
+            getFileIcon(ext) {
+                const icons = { 'js': '📜', 'html': '🌐', 'css': '🎨', 'json': '📋', 'md': '📝', 'txt': '📄', 'ico': '🖼️', 'png': '🖼️', 'jpg': '🖼️' };
+                return icons[ext] || '📄';
+            }
+
+            formatSize(bytes) {
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            }
+
+            showLoading(text) {
+                document.getElementById('loadingText').textContent = text;
+                document.getElementById('loading').style.display = 'flex';
+            }
+
+            hideLoading() {
+                document.getElementById('loading').style.display = 'none';
+            }
+
+            showMessage(text, type) {
+                const msg = document.getElementById('message');
+                msg.textContent = text;
+                msg.className = `message ${type}`;
+                msg.style.display = 'block';
+                setTimeout(() => msg.style.display = 'none', 5000);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => { window.exporter = new IAProjectExporterV12(); });
+    </script>
+</body>
+</html>
