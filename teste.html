@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FacePonto · Captura Automática de Rosto com IA</title>
-    <!-- face-api.js - Biblioteca gratuita e especializada em reconhecimento facial -->
+    <title>FacePonto · Reconhecimento Facial com face-api.js</title>
+    <!-- face-api.js - Biblioteca gratuita e especializada em reconhecimento facial (baseada em TensorFlow.js) -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
@@ -104,13 +104,13 @@
             bottom: 12px;
             left: 12px;
             right: 12px;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(8px);
             border-radius: 60px;
-            padding: 8px 12px;
+            padding: 6px 12px;
             text-align: center;
             color: white;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 500;
             border-left: 3px solid #38bdf8;
             z-index: 10;
@@ -149,6 +149,12 @@
         .btn-primary {
             background: #0f3b5e;
             border-color: #2c7da0;
+        }
+
+        .btn-capture {
+            background: #0f3b2c;
+            border-color: #2ecc71;
+            color: #ccf0e0;
         }
 
         .btn-danger {
@@ -227,40 +233,36 @@
             font-size: 0.7rem;
         }
 
-        .auto-capture-badge {
-            background: #00aa55;
-            color: white;
+        .face-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #00ff8844;
+            padding: 4px 8px;
             border-radius: 20px;
-            padding: 4px 12px;
             font-size: 0.7rem;
-            font-weight: bold;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.6; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.05); }
-            100% { opacity: 0.6; transform: scale(1); }
+            color: white;
+            backdrop-filter: blur(4px);
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>👤 FacePonto <small>Captura Automática · IA em Tempo Real</small></h1>
-    <div class="sub">🤖 Aproxime o rosto · Detectamos e capturamos automaticamente!</div>
+    <h1>👤 FacePonto <small>face-api.js · Reconhecimento Facial</small></h1>
+    <div class="sub">📸 Rosto enquadrado em VERDE · IA gratuita e precisa</div>
 
     <div class="camera-panel">
         <div class="video-wrapper">
             <video id="video" autoplay playsinline muted></video>
             <canvas id="overlayCanvas" width="640" height="480"></canvas>
             <div class="scan-overlay">
-                🎯 <span id="autoCaptureStatus">🔍 Aguardando rosto...</span>
+                🎯 Centralize o rosto · O quadrado verde aparece ao detectar
             </div>
         </div>
         <div class="controls">
             <button id="btnSwitchCamera" class="btn-primary">🔄 Trocar câmera</button>
+            <button id="btnCapture" class="btn-capture">📸 Capturar Rosto / Verificar</button>
             <button id="btnRegisterMode" class="btn-primary" style="background:#2a2f4a;">✍️ Modo Cadastro</button>
-            <button id="clearAllBtn" class="btn-danger">🗑️ Limpar todos</button>
         </div>
         <div class="status-msg" id="statusMsg">
             ⚡ Carregando modelos de IA (face detection + recognition)...
@@ -271,39 +273,34 @@
         <div class="section-title">
             🧠 Banco de Rostos Cadastrados
             <span class="ia-badge" id="iaStatus">🔍 Carregando...</span>
-            <span class="auto-capture-badge" id="autoBadge">📸 CAPTURA AUTOMÁTICA ATIVA</span>
         </div>
         <div id="userList" class="user-list">
-            <div style="text-align:center; color:#6e85b0; padding: 20px;">📌 Nenhum rosto cadastrado. Ative MODO CADASTRO e aproxime o rosto.</div>
+            <div style="text-align:center; color:#6e85b0; padding: 20px;">📌 Nenhum rosto cadastrado. Use [Modo Cadastro] + Capturar.</div>
         </div>
-        <div style="display: flex; justify-content: space-between; margin-top: 14px; font-size: 0.7rem; color:#7187b5;">
-            <span>🔐 Reconhecimento facial com descriptors 128D</span>
-            <span>⚡ Captura automática a cada 2 segundos</span>
+        <div style="display: flex; justify-content: space-between; margin-top: 14px;">
+            <span style="font-size: 0.7rem; color:#7187b5;">🔐 Reconhecimento facial com descriptors (Face Recognition Net)</span>
+            <button id="clearAllBtn" class="btn-danger" style="padding: 6px 14px;">🗑️ Limpar todos</button>
         </div>
     </div>
 </div>
 
 <script>
     // --------------------------------------------------------------
-    // SISTEMA DE RECONHECIMENTO FACIAL COM CAPTURA AUTOMÁTICA
-    // - Detecta rosto continuamente com bounding box VERDE
-    // - CAPTURA AUTOMÁTICA quando rosto é detectado (cooldown 2s)
+    // SISTEMA DE RECONHECIMENTO FACIAL COM face-api.js
+    // - Detecta rosto com bounding box VERDE
+    // - Extrai descriptor facial (128 dimensões)
+    // - Reconhecimento por similaridade de cosseno
     // - Suporte câmera frontal/traseira
     // --------------------------------------------------------------
     
     let modelsLoaded = false;
     let currentStream = null;
-    let currentFacingMode = "user";
+    let currentFacingMode = "user"; // user = frontal, environment = traseira
     let detectionInterval = null;
-    let currentDescriptor = null;
-    let currentDetection = null;
+    let currentDescriptor = null;    // último descriptor detectado
+    let currentDetection = null;     // último bounding box detectado
     
-    // Controle de captura automática (evita múltiplas capturas em sequência)
-    let lastCaptureTime = 0;
-    let captureCooldown = 2000; // 2 segundos entre capturas automáticas
-    let isProcessingCapture = false;
-    
-    // Banco de rostos cadastrados
+    // Banco de rostos cadastrados: cada item { id, name, descriptor, timestamp }
     let registeredUsers = [];
     let nextId = 1;
     
@@ -315,12 +312,12 @@
     const overlayCanvas = document.getElementById('overlayCanvas');
     const ctx = overlayCanvas.getContext('2d');
     const btnSwitch = document.getElementById('btnSwitchCamera');
+    const btnCapture = document.getElementById('btnCapture');
     const btnRegisterMode = document.getElementById('btnRegisterMode');
     const clearAllBtn = document.getElementById('clearAllBtn');
     const statusDiv = document.getElementById('statusMsg');
     const userListDiv = document.getElementById('userList');
     const iaStatusSpan = document.getElementById('iaStatus');
-    const autoCaptureStatusSpan = document.getElementById('autoCaptureStatus');
     
     // Ajustar canvas para as dimensões do vídeo
     function resizeCanvas() {
@@ -330,11 +327,11 @@
         }
     }
     
-    // Renderizar lista de usuários
+    // Renderizar lista de usuários cadastrados
     function renderUserList() {
         if (!userListDiv) return;
         if (registeredUsers.length === 0) {
-            userListDiv.innerHTML = `<div style="text-align:center; color:#6e85b0; padding: 20px;">📌 Nenhum rosto cadastrado. Ative MODO CADASTRO e aproxime o rosto.</div>`;
+            userListDiv.innerHTML = `<div style="text-align:center; color:#6e85b0; padding: 20px;">📌 Nenhum rosto cadastrado. Use [Modo Cadastro] + Capturar.</div>`;
             return;
         }
         let html = '';
@@ -343,7 +340,7 @@
                 <div class="user-item">
                     <div>
                         <div class="user-name">👤 ${escapeHtml(user.name)}</div>
-                        <div class="user-id">ID #${user.id} · ${new Date(user.timestamp).toLocaleDateString('pt-BR')} ${new Date(user.timestamp).toLocaleTimeString()}</div>
+                        <div class="user-id">ID #${user.id} · ${new Date(user.timestamp).toLocaleDateString('pt-BR')}</div>
                     </div>
                     <button class="badge" data-id="${user.id}" style="background:#4a3b6e;" onclick="window.deleteUser(${user.id})">🗑️</button>
                 </div>
@@ -367,11 +364,11 @@
             ...user,
             descriptor: Array.from(user.descriptor)
         }));
-        localStorage.setItem('facePontoAutoDB', JSON.stringify(toStore));
+        localStorage.setItem('facePontoDB_v2', JSON.stringify(toStore));
     }
     
     function loadFromLocalStorage() {
-        const raw = localStorage.getItem('facePontoAutoDB');
+        const raw = localStorage.getItem('facePontoDB_v2');
         if (raw) {
             try {
                 const parsed = JSON.parse(raw);
@@ -394,23 +391,19 @@
         registeredUsers = registeredUsers.filter(user => user.id !== id);
         saveToLocalStorage();
         renderUserList();
-        showTemporaryStatus(`🗑️ Rosto removido. Modo: ${operationMode === 'register' ? 'CADASTRO' : 'VERIFICAÇÃO'}`);
+        statusDiv.innerHTML = `🗑️ Rosto removido. Modo: ${operationMode === 'register' ? 'CADASTRO' : 'VERIFICAÇÃO'}`;
+        setTimeout(() => updateStatusByMode(), 1500);
     };
     
-    function showTemporaryStatus(message, isError = false) {
-        statusDiv.innerHTML = message;
-        if (!isError) {
-            setTimeout(() => {
-                if (operationMode === 'verify') {
-                    statusDiv.innerHTML = `🔍 Modo VERIFICAÇÃO: Aproxime o rosto para captura automática.`;
-                } else {
-                    statusDiv.innerHTML = `✍️ Modo CADASTRO: Aproxime o rosto para cadastro automático.`;
-                }
-            }, 3000);
+    function updateStatusByMode() {
+        if (operationMode === 'verify') {
+            statusDiv.innerHTML = `🔍 Modo VERIFICAÇÃO: capture o rosto para bater ponto/segurança.`;
+        } else {
+            statusDiv.innerHTML = `✍️ Modo CADASTRO: Capture o rosto e informe o nome.`;
         }
     }
     
-    // Similaridade por cosseno
+    // Similaridade por cosseno entre dois descriptors
     function cosineSimilarity(descA, descB) {
         let dot = 0, normA = 0, normB = 0;
         for (let i = 0; i < descA.length; i++) {
@@ -422,10 +415,10 @@
         return dot / (Math.sqrt(normA) * Math.sqrt(normB));
     }
     
-    // Verificar e processar reconhecimento
-    async function processVerification(descriptor) {
+    // Verificar rosto contra banco de dados
+    async function verifyFace(descriptor) {
         if (registeredUsers.length === 0) {
-            autoCaptureStatusSpan.innerHTML = "📛 Nenhum rosto cadastrado. Use MODO CADASTRO";
+            statusDiv.innerHTML = "📛 Nenhum rosto cadastrado. Use MODO CADASTRO primeiro.";
             return false;
         }
         
@@ -439,33 +432,25 @@
             }
         }
         
+        // Threshold ajustado para face-api.js (recomendado: 0.6)
         const THRESHOLD = 0.55;
         if (bestMatch && bestScore >= THRESHOLD) {
             const horaAtual = new Date().toLocaleString('pt-BR');
-            showTemporaryStatus(`✅ PONTO REGISTRADO! ${bestMatch.name} · Confiança: ${(bestScore * 100).toFixed(1)}% | ${horaAtual}`);
-            autoCaptureStatusSpan.innerHTML = `✅ ${bestMatch.name} · Ponto registrado!`;
-            
-            // Efeito sonoro visual (vibração em celulares)
-            if (navigator.vibrate) navigator.vibrate(200);
-            
-            // Reset após 3 segundos
-            setTimeout(() => {
-                if (operationMode === 'verify') autoCaptureStatusSpan.innerHTML = "🔍 Aguardando próximo rosto...";
-            }, 3000);
+            statusDiv.innerHTML = `✅ PONTO REGISTRADO! Bem-vindo(a) ${bestMatch.name} · Confiança: ${(bestScore * 100).toFixed(1)}%<br>🕒 ${horaAtual} · Acesso liberado.`;
             return true;
         } else {
             const scorePercent = bestMatch ? (bestScore * 100).toFixed(1) : '0';
-            autoCaptureStatusSpan.innerHTML = `❌ Rosto não reconhecido (${scorePercent}%)`;
+            statusDiv.innerHTML = `❌ ACESSO NEGADO: Rosto não reconhecido (similaridade ${scorePercent}%).<br>🔍 Verifique iluminação e posicione o rosto no quadrado verde.`;
             return false;
         }
     }
     
-    // Cadastrar novo rosto automaticamente
-    async function processRegistration(descriptor) {
-        let userName = prompt("👤 NOVO ROSTO DETECTADO! Digite o NOME do FUNCIONÁRIO para cadastrar:", `Usuário ${nextId}`);
+    // Cadastrar novo rosto
+    async function registerFace(descriptor) {
+        let userName = prompt("👤 Digite o NOME do FUNCIONÁRIO para cadastrar o rosto:", `Usuário ${nextId}`);
         if (!userName || userName.trim() === "") {
-            autoCaptureStatusSpan.innerHTML = "✖️ Cadastro cancelado.";
-            return false;
+            statusDiv.innerHTML = "✖️ Cadastro cancelado: nome não informado.";
+            return;
         }
         userName = userName.trim();
         
@@ -477,40 +462,34 @@
         });
         saveToLocalStorage();
         renderUserList();
-        showTemporaryStatus(`✨ ROSTO CADASTRADO: ${userName}! (${registeredUsers.length} rostos no banco)`);
-        autoCaptureStatusSpan.innerHTML = `✅ ${userName} cadastrado com sucesso!`;
+        statusDiv.innerHTML = `✨ ROSTO CADASTRADO com sucesso para ${userName}! (${registeredUsers.length} rostos no banco)`;
         
-        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-        
-        setTimeout(() => {
-            autoCaptureStatusSpan.innerHTML = "✍️ Modo Cadastro ativo · Aproxime outro rosto";
-        }, 2500);
-        
-        return true;
+        if (operationMode === 'register') {
+            const continuar = confirm("Rosto cadastrado! Deseja continuar no MODO CADASTRO? (Cancelar muda para VERIFICAÇÃO)");
+            if (!continuar) {
+                operationMode = "verify";
+                btnRegisterMode.style.background = "#2a2f4a";
+                btnRegisterMode.innerHTML = "✍️ Modo Cadastro";
+                updateStatusByMode();
+            }
+        }
     }
     
-    // CAPTURA AUTOMÁTICA - chamada quando rosto é detectado
-    async function autoCapture(descriptor) {
-        if (isProcessingCapture) return;
+    // Função chamada ao clicar em capturar
+    async function onCapture() {
+        if (!modelsLoaded) {
+            statusDiv.innerHTML = "⏳ Modelos de IA ainda carregando, aguarde...";
+            return;
+        }
+        if (!currentDescriptor) {
+            statusDiv.innerHTML = "🤖 Nenhum rosto detectado no momento. Centralize o rosto no quadrado verde!";
+            return;
+        }
         
-        const now = Date.now();
-        if (now - lastCaptureTime < captureCooldown) return;
-        
-        isProcessingCapture = true;
-        lastCaptureTime = now;
-        
-        try {
-            if (operationMode === "register") {
-                await processRegistration(descriptor);
-            } else {
-                await processVerification(descriptor);
-            }
-        } catch (err) {
-            console.error("Erro na captura automática:", err);
-        } finally {
-            setTimeout(() => {
-                isProcessingCapture = false;
-            }, 500);
+        if (operationMode === "register") {
+            await registerFace(currentDescriptor);
+        } else {
+            await verifyFace(currentDescriptor);
         }
     }
     
@@ -519,14 +498,16 @@
         if (!modelsLoaded || !video.videoWidth || video.readyState < 2) return;
         
         try {
+            // Detectar rosto + extrair descriptor (face recognition)
             const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
                 .withFaceLandmarks()
                 .withFaceDescriptor();
             
+            // Limpar canvas e desenhar bounding box
             ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
             
             if (detection) {
-                // Atualizar descriptor atual
+                // Salvar descriptor atual
                 currentDescriptor = detection.descriptor;
                 currentDetection = detection;
                 
@@ -538,7 +519,7 @@
                 ctx.shadowBlur = 0;
                 ctx.strokeRect(box.x, box.y, box.width, box.height);
                 
-                // Desenhar pontos faciais
+                // Desenhar pontos faciais (opcional)
                 if (detection.landmarks) {
                     ctx.fillStyle = '#00ccff';
                     for (const point of detection.landmarks.positions) {
@@ -551,9 +532,10 @@
                 // Texto indicador
                 ctx.font = "bold 16px 'Segoe UI'";
                 ctx.fillStyle = '#00ff88';
+                ctx.shadowBlur = 0;
                 ctx.fillText("✅ Rosto detectado", box.x, box.y - 8);
                 
-                // Exibir similaridade em tempo real (modo verificação)
+                // Exibir similaridade em tempo real (se houver cadastros)
                 if (operationMode === "verify" && registeredUsers.length > 0) {
                     let bestSim = -1;
                     let bestName = "";
@@ -564,7 +546,7 @@
                             bestName = user.name;
                         }
                     }
-                    if (bestSim > 0.4) {
+                    if (bestSim > 0.45) {
                         ctx.font = "14px 'Segoe UI'";
                         ctx.fillStyle = '#ffdd88';
                         ctx.fillText(`🔍 ${bestName}: ${(bestSim*100).toFixed(0)}%`, box.x, box.y + box.height + 18);
@@ -572,35 +554,27 @@
                 }
                 
                 ctx.restore();
-                
-                // ACIONAR CAPTURA AUTOMÁTICA quando rosto está estável
-                // Apenas se o rosto estiver bem centralizado (tamanho mínimo)
-                if (box.width > 60 && box.height > 60) {
-                    autoCapture(currentDescriptor);
-                } else {
-                    autoCaptureStatusSpan.innerHTML = "📏 Aproxime mais o rosto...";
-                }
             } else {
                 currentDescriptor = null;
                 currentDetection = null;
+                // Desenhar texto de "aguardando rosto"
                 ctx.font = "16px 'Segoe UI'";
                 ctx.fillStyle = '#ff8888';
                 ctx.fillText("⚠️ Nenhum rosto encontrado", 20, 50);
-                autoCaptureStatusSpan.innerHTML = "🔍 Aguardando rosto...";
             }
         } catch (err) {
             console.warn("Erro na detecção:", err);
         }
     }
     
-    // Loop contínuo de detecção (10x por segundo)
+    // Loop contínuo de detecção
     function startDetectionLoop() {
         if (detectionInterval) clearInterval(detectionInterval);
         detectionInterval = setInterval(() => {
             if (modelsLoaded && video.readyState === 4 && video.videoWidth > 0) {
                 detectFaces();
             }
-        }, 100);
+        }, 100); // 10fps para detecção suave
     }
     
     // ---------- CARREGAR MODELOS DO FACE-API.JS ----------
@@ -608,14 +582,21 @@
         statusDiv.innerHTML = "🧠 Carregando modelos de detecção facial (TinyFaceDetector + FaceLandmark + Recognition)...";
         iaStatusSpan.innerHTML = "⏳ Baixando IA...";
         
+        const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+        // Usar CDN alternativa mais rápida (ou local, mas via CDN funciona)
+        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+        await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+        await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+        
+        // Fallback caso os modelos padrão não carreguem (alguns servidores bloqueiam)
         // Tentativa com CDN oficial
-        const weightsUrl = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights';
         try {
-            await faceapi.nets.tinyFaceDetector.loadFromUri(weightsUrl);
-            await faceapi.nets.faceLandmark68Net.loadFromUri(weightsUrl);
-            await faceapi.nets.faceRecognitionNet.loadFromUri(weightsUrl);
+            await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights');
+            await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights');
+            await faceapi.nets.faceRecognitionNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights');
         } catch(e) {
-            console.warn("CDN falhou, tentando repositório alternativo", e);
+            console.warn("Primeira tentativa falhou, tentando CDN alternativa", e);
+            // Tenta novamente com URL absoluta do GitHub
             await faceapi.nets.tinyFaceDetector.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights');
             await faceapi.nets.faceLandmark68Net.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights');
             await faceapi.nets.faceRecognitionNet.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights');
@@ -623,8 +604,7 @@
         
         modelsLoaded = true;
         iaStatusSpan.innerHTML = "✅ face-api.js ativo";
-        statusDiv.innerHTML = "✅ CAPTURA AUTOMÁTICA ATIVA! Aproxime o rosto do quadrado verde.";
-        autoCaptureStatusSpan.innerHTML = "🔍 Aguardando rosto...";
+        statusDiv.innerHTML = "✅ Modelos carregados! Rosto será enquadrado em VERDE. Modo: " + (operationMode === 'register' ? 'CADASTRO' : 'VERIFICAÇÃO');
     }
     
     // ---------- GERENCIAMENTO DE CÂMERA ----------
@@ -647,11 +627,12 @@
             video.srcObject = stream;
             await video.play();
             
+            // Aguardar dimensões do vídeo para ajustar canvas
             setTimeout(() => {
                 resizeCanvas();
             }, 200);
             
-            statusDiv.innerHTML = `📷 Câmera ${facingMode === 'user' ? 'FRONTAL' : 'TRASEIRA'} ativa · Captura automática ATIVA`;
+            statusDiv.innerHTML = `📷 Câmera ${facingMode === 'user' ? 'FRONTAL' : 'TRASEIRA'} ativa. Modo: ${operationMode === 'register' ? 'CADASTRO' : 'VERIFICAÇÃO'}`;
             return true;
         } catch (err) {
             console.warn(err);
@@ -660,7 +641,7 @@
                 currentStream = fallbackStream;
                 video.srcObject = fallbackStream;
                 await video.play();
-                statusDiv.innerHTML = `⚠️ Câmera padrão ativa · Captura automática funcionando`;
+                statusDiv.innerHTML = `⚠️ Câmera padrão ativa (fallback).`;
                 return true;
             } catch (err2) {
                 statusDiv.innerHTML = `🚫 Erro ao acessar câmera: ${err2.message}. Verifique permissões.`;
@@ -674,8 +655,6 @@
         currentFacingMode = newMode;
         await initCamera(currentFacingMode);
         resizeCanvas();
-        // Resetar cooldown ao trocar câmera
-        lastCaptureTime = 0;
     }
     
     function toggleRegisterMode() {
@@ -683,17 +662,13 @@
             operationMode = "register";
             btnRegisterMode.style.background = "#1f6d5c";
             btnRegisterMode.innerHTML = "🔓 Modo Verificação";
-            statusDiv.innerHTML = "✍️ MODO CADASTRO ativo! Aproxime o rosto para cadastro automático.";
-            autoCaptureStatusSpan.innerHTML = "✍️ Modo Cadastro · Aproxime o rosto";
+            statusDiv.innerHTML = "✍️ MODO CADASTRO ativo! Capture o rosto e informe o nome.";
         } else {
             operationMode = "verify";
             btnRegisterMode.style.background = "#2a2f4a";
             btnRegisterMode.innerHTML = "✍️ Modo Cadastro";
-            statusDiv.innerHTML = "🔍 MODO VERIFICAÇÃO ativo! Aproxime o rosto para bater ponto automático.";
-            autoCaptureStatusSpan.innerHTML = "🔍 Modo Verificação · Aguardando rosto";
+            statusDiv.innerHTML = "🔍 MODO VERIFICAÇÃO ativo! O sistema reconhecerá rostos para bater ponto.";
         }
-        // Resetar cooldown para nova captura imediata
-        lastCaptureTime = 0;
     }
     
     function clearAllData() {
@@ -703,16 +678,15 @@
             saveToLocalStorage();
             renderUserList();
             statusDiv.innerHTML = "🧹 Todos os dados faciais foram removidos. Cadastre novos rostos no modo CADASTRO.";
-            autoCaptureStatusSpan.innerHTML = "📛 Banco vazio · Ative modo cadastro";
         }
     }
     
-    // Eventos
-    video.addEventListener('loadeddata', () => {
+    // Evento de redimensionamento para manter canvas correto
+    window.addEventListener('resize', () => {
         resizeCanvas();
     });
     
-    window.addEventListener('resize', () => {
+    video.addEventListener('loadeddata', () => {
         resizeCanvas();
     });
     
@@ -720,14 +694,15 @@
     async function init() {
         loadFromLocalStorage();
         await loadModels();
-        await initCamera("user");
+        await initCamera("user"); // começa com câmera frontal
         startDetectionLoop();
         
         btnSwitch.addEventListener('click', switchCamera);
+        btnCapture.addEventListener('click', onCapture);
         btnRegisterMode.addEventListener('click', toggleRegisterMode);
         clearAllBtn.addEventListener('click', clearAllData);
         
-        statusDiv.innerHTML = "✅ SISTEMA PRONTO! Aproxime o rosto da câmera. Captura é AUTOMÁTICA!";
+        updateStatusByMode();
     }
     
     init();
