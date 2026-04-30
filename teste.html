@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FacePonto · Alta Precisão · 99.5% de Certeza</title>
-    <!-- face-api.js - Biblioteca gratuita e especializada em reconhecimento facial -->
+    <title>FacePonto · Reconhecimento Facial com IA</title>
+    <!-- TensorFlow.js e FaceMesh para detecção facial e extração de características -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
     <style>
         * {
             margin: 0;
@@ -25,9 +25,9 @@
         }
 
         .container {
-            max-width: 580px;
+            max-width: 560px;
             width: 100%;
-            background: rgba(18, 25, 45, 0.85);
+            background: rgba(18, 25, 45, 0.8);
             backdrop-filter: blur(12px);
             border-radius: 48px;
             padding: 20px 18px 28px;
@@ -43,7 +43,7 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -51,19 +51,18 @@
         }
 
         h1 small {
-            font-size: 0.55rem;
-            background: #d4af37;
-            color: #1a1a2e;
+            font-size: 0.65rem;
+            background: #1e2a4e;
+            color: #7dd3fc;
             padding: 2px 8px;
             border-radius: 40px;
-            font-weight: bold;
         }
 
         .sub {
             text-align: center;
             color: #8e9bb5;
-            font-size: 0.7rem;
-            margin-bottom: 16px;
+            font-size: 0.75rem;
+            margin-bottom: 18px;
             padding-bottom: 6px;
             border-bottom: 1px dashed #2d3a5e;
         }
@@ -105,15 +104,15 @@
             bottom: 12px;
             left: 12px;
             right: 12px;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(8px);
             border-radius: 60px;
-            padding: 8px 12px;
+            padding: 6px 12px;
             text-align: center;
             color: white;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             font-weight: 500;
-            border-left: 3px solid #d4af37;
+            border-left: 3px solid #38bdf8;
             z-index: 10;
         }
 
@@ -178,7 +177,6 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            flex-wrap: wrap;
         }
 
         .user-list {
@@ -196,7 +194,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-left: 4px solid #d4af37;
+            border-left: 4px solid #38bdf8;
         }
 
         .user-name {
@@ -235,110 +233,87 @@
             font-size: 0.7rem;
         }
 
-        .high-precision {
-            background: #d4af37;
-            color: #1a1a2e;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: bold;
-        }
-
-        .live-indicator {
+        .face-indicator {
             position: absolute;
             top: 10px;
-            right: 10px;
-            background: #ff4444;
+            left: 10px;
+            background: #00ff8844;
             padding: 4px 8px;
             border-radius: 20px;
-            font-size: 0.6rem;
-            font-weight: bold;
-            z-index: 20;
-            animation: pulse 1s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.6; }
-            50% { opacity: 1; }
+            font-size: 0.7rem;
+            color: white;
+            backdrop-filter: blur(4px);
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>👤 FacePonto <small>99.5% DE CERTEZA</small></h1>
-    <div class="sub">🔒 Alta precisão + Detecção de movimento (anti-fraude)</div>
+    <h1>👤 FacePonto <small>Reconhecimento Facial com IA</small></h1>
+    <div class="sub">📸 Capture o rosto · IA analisa e identifica · Segurança + Ponto</div>
 
     <div class="camera-panel">
         <div class="video-wrapper">
             <video id="video" autoplay playsinline muted></video>
-            <canvas id="overlayCanvas" width="640" height="480"></canvas>
+            <canvas id="canvas" width="640" height="480"></canvas>
             <div class="scan-overlay">
-                🎯 Centralize o rosto · Verde = detectado · Dourado = 99.5% match
+                🎯 Centralize o rosto · Olhe para a câmera
             </div>
-            <div class="live-indicator" id="liveIndicator">🔴 LIVE</div>
         </div>
         <div class="controls">
             <button id="btnSwitchCamera" class="btn-primary">🔄 Trocar câmera</button>
-            <button id="btnCapture" class="btn-capture">📸 Capturar / Verificar</button>
+            <button id="btnCapture" class="btn-capture">📸 Capturar / Verificar Rosto</button>
             <button id="btnRegisterMode" class="btn-primary" style="background:#2a2f4a;">✍️ Modo Cadastro</button>
         </div>
         <div class="status-msg" id="statusMsg">
-            ⚡ Carregando modelos de IA...
+            ⚡ Inicializando IA e câmera...
         </div>
     </div>
 
     <div class="info-card">
         <div class="section-title">
             🧠 Banco de Rostos Cadastrados
-            <span class="ia-badge" id="iaStatus">🔍 Carregando...</span>
-            <span class="high-precision">🎯 Threshold: 99.5%</span>
+            <span class="ia-badge" id="iaStatus">🔍 FaceMesh + IA</span>
         </div>
         <div id="userList" class="user-list">
-            <div style="text-align:center; color:#6e85b0; padding: 20px;">📌 Nenhum rosto cadastrado.</div>
+            <div style="text-align:center; color:#6e85b0; padding: 20px;">📌 Nenhum rosto cadastrado. Use [Modo Cadastro] + Capturar.</div>
         </div>
         <div style="display: flex; justify-content: space-between; margin-top: 14px;">
-            <span style="font-size: 0.65rem; color:#7187b5;">🔐 Apenas相似度 ≥ 99.5% libera acesso</span>
-            <button id="clearAllBtn" class="btn-danger" style="padding: 6px 14px;">🗑️ Limpar todos</button>
+            <span style="font-size: 0.7rem; color:#7187b5;">🔐 Reconhecimento facial com 468 pontos faciais</span>
+            <button id="clearAllBtn" class="btn-danger" style="padding: 6px 14px;">🗑️ Limpar tudo</button>
         </div>
     </div>
 </div>
 
 <script>
     // --------------------------------------------------------------
-    // SISTEMA DE RECONHECIMENTO FACIAL COM 99.5% DE CERTEZA
-    // - Threshold de similaridade: 0.995 (99.5%)
-    // - Detecção de movimento (Live Detection) para evitar fotos
-    // - Compara múltiplos frames para garantir consistência
-    // - Suporte câmera frontal/traseira
+    // SISTEMA DE RECONHECIMENTO FACIAL COM TENSORFLOW.JS + FACEMESH
+    // Extrai um vetor de características (landmarks normalizados)
+    // Utiliza similaridade por cosseno para identificar rostos
+    // Suporte a câmera frontal/traseira (modo ambiente)
     // --------------------------------------------------------------
     
-    let modelsLoaded = false;
+    let faceMesh = null;
+    let video = null;
+    let canvas = null;
+    let canvasCtx = null;
     let currentStream = null;
-    let currentFacingMode = "user";
+    let currentFacingMode = "user"; // user = frontal, environment = traseira
+    let isFaceMeshReady = false;
     let detectionInterval = null;
-    let currentDescriptor = null;
-    let currentDetection = null;
     
-    // VARIÁVEIS PARA DETECÇÃO DE MOVIMENTO (LIVE DETECTION)
-    let previousLandmarks = null;
-    let movementScore = 0;
-    let isLiveFace = false;
-    let consecutiveStableFrames = 0;
-    
-    // Banco de rostos cadastrados
+    // Banco de rostos cadastrados: cada item { id, name, faceDescriptor, timestamp }
     let registeredUsers = [];
     let nextId = 1;
     
-    // Modo
+    // Modo: "register" (cadastrar novo rosto) ou "verify" (verificar ponto/segurança)
     let operationMode = "verify";
     
-    // THRESHOLD ALTO: 99.5% (0.995)
-    const HIGH_THRESHOLD = 0.995;
+    // Último embedding capturado para evitar processamento duplicado
+    let lastFaceDescriptor = null;
     
     // Elementos DOM
-    const video = document.getElementById('video');
-    const overlayCanvas = document.getElementById('overlayCanvas');
-    const ctx = overlayCanvas.getContext('2d');
+    const videoEl = document.getElementById('video');
+    const canvasEl = document.getElementById('canvas');
     const btnSwitch = document.getElementById('btnSwitchCamera');
     const btnCapture = document.getElementById('btnCapture');
     const btnRegisterMode = document.getElementById('btnRegisterMode');
@@ -346,19 +321,17 @@
     const statusDiv = document.getElementById('statusMsg');
     const userListDiv = document.getElementById('userList');
     const iaStatusSpan = document.getElementById('iaStatus');
-    const liveIndicator = document.getElementById('liveIndicator');
     
-    function resizeCanvas() {
-        if (video.videoWidth && video.videoHeight) {
-            overlayCanvas.width = video.videoWidth;
-            overlayCanvas.height = video.videoHeight;
-        }
+    // Ajustar canvas para espelhar video
+    function setupCanvas() {
+        canvasCtx = canvasEl.getContext('2d');
     }
     
+    // Renderizar lista de usuários cadastrados
     function renderUserList() {
         if (!userListDiv) return;
         if (registeredUsers.length === 0) {
-            userListDiv.innerHTML = `<div style="text-align:center; color:#6e85b0; padding: 20px;">📌 Nenhum rosto cadastrado. Use [Modo Cadastro].</div>`;
+            userListDiv.innerHTML = `<div style="text-align:center; color:#6e85b0; padding: 20px;">📌 Nenhum rosto cadastrado. Use [Modo Cadastro] + Capturar.</div>`;
             return;
         }
         let html = '';
@@ -385,22 +358,23 @@
         });
     }
     
+    // Persistência LocalStorage
     function saveToLocalStorage() {
         const toStore = registeredUsers.map(user => ({
             ...user,
-            descriptor: Array.from(user.descriptor)
+            faceDescriptor: Array.from(user.faceDescriptor)
         }));
-        localStorage.setItem('facePontoHighPrecision', JSON.stringify(toStore));
+        localStorage.setItem('facePontoDB', JSON.stringify(toStore));
     }
     
     function loadFromLocalStorage() {
-        const raw = localStorage.getItem('facePontoHighPrecision');
+        const raw = localStorage.getItem('facePontoDB');
         if (raw) {
             try {
                 const parsed = JSON.parse(raw);
                 registeredUsers = parsed.map(user => ({
                     ...user,
-                    descriptor: new Float32Array(user.descriptor)
+                    faceDescriptor: new Float32Array(user.faceDescriptor)
                 }));
                 if (registeredUsers.length > 0) {
                     nextId = Math.max(...registeredUsers.map(u => u.id)) + 1;
@@ -412,80 +386,42 @@
         }
     }
     
+    // Excluir usuário globalmente
     window.deleteUser = function(id) {
         registeredUsers = registeredUsers.filter(user => user.id !== id);
         saveToLocalStorage();
         renderUserList();
-        statusDiv.innerHTML = `🗑️ Rosto removido. Modo: ${operationMode === 'register' ? 'CADASTRO' : 'VERIFICAÇÃO'}`;
+        statusDiv.innerHTML = `🗑️ Rosto removido. Modo atual: ${operationMode === 'register' ? 'CADASTRO' : 'VERIFICAÇÃO'}`;
+        setTimeout(() => {
+            updateStatusByMode();
+        }, 1500);
     };
     
     function updateStatusByMode() {
         if (operationMode === 'verify') {
-            statusDiv.innerHTML = `🔍 MODO VERIFICAÇÃO · Exigindo ${(HIGH_THRESHOLD*100).toFixed(1)}% de similaridade + movimento real.`;
+            statusDiv.innerHTML = `🔍 Modo VERIFICAÇÃO: capture o rosto para bater ponto/segurança.`;
         } else {
-            statusDiv.innerHTML = `✍️ MODO CADASTRO · Posicione o rosto e faça leves movimentos.`;
+            statusDiv.innerHTML = `✍️ Modo CADASTRO: Capture o rosto e informe o nome.`;
         }
     }
     
-    // DETECÇÃO DE MOVIMENTO (LIVE DETECTION) - verifica se há micro-movimentos faciais
-    function detectLiveMotion(landmarks) {
-        if (!landmarks || landmarks.length === 0) {
-            previousLandmarks = null;
-            movementScore = 0;
-            return false;
+    // Extrair descritor facial a partir dos landmarks do FaceMesh
+    // Normaliza os 468 pontos para um vetor de 1404 dimensões (x,y,z)
+    function extractFaceDescriptor(landmarks) {
+        if (!landmarks || landmarks.length === 0) return null;
+        // usar apenas os 468 pontos (cada um com x,y,z)
+        const descriptor = [];
+        for (let i = 0; i < landmarks.length; i++) {
+            descriptor.push(landmarks[i].x);
+            descriptor.push(landmarks[i].y);
+            descriptor.push(landmarks[i].z);
         }
-        
-        if (!previousLandmarks) {
-            previousLandmarks = landmarks.map(l => ({ x: l.x, y: l.y }));
-            return false;
-        }
-        
-        // Calcular deslocamento médio dos pontos (nariz, olhos, boca - mais sensíveis)
-        let totalMovement = 0;
-        let pointsCount = 0;
-        
-        // Usar pontos-chave: nariz (1), olhos (33, 133, 263, 362), boca (61, 291)
-        const keyIndices = [1, 33, 133, 263, 362, 61, 291, 78, 308];
-        
-        for (const idx of keyIndices) {
-            if (idx < landmarks.length && idx < previousLandmarks.length) {
-                const curr = landmarks[idx];
-                const prev = previousLandmarks[idx];
-                const dx = (curr.x - prev.x) * 100;
-                const dy = (curr.y - prev.y) * 100;
-                const movement = Math.sqrt(dx*dx + dy*dy);
-                totalMovement += movement;
-                pointsCount++;
-            }
-        }
-        
-        const avgMovement = pointsCount > 0 ? totalMovement / pointsCount : 0;
-        
-        // Atualizar movimento (usando média exponencial)
-        movementScore = movementScore * 0.7 + avgMovement * 0.3;
-        
-        // Salvar landmarks atuais para próximo frame
-        previousLandmarks = landmarks.map(l => ({ x: l.x, y: l.y }));
-        
-        // Considerar "vivo" se houver movimento significativo (>= 0.8 pixels normalizados)
-        // e também se não for estático demais por muitos frames
-        const isMoving = movementScore > 0.6;
-        
-        if (isMoving) {
-            consecutiveStableFrames = 0;
-            return true;
-        } else {
-            consecutiveStableFrames++;
-            // Se estiver muito estável por 20 frames (~2 segundos), possivelmente foto
-            if (consecutiveStableFrames > 20) {
-                return false;
-            }
-            return movementScore > 0.3; // movimento residual aceito
-        }
+        return new Float32Array(descriptor);
     }
     
-    // Similaridade de cosseno rigorosa
+    // Similaridade por cosseno entre dois descritores
     function cosineSimilarity(descA, descB) {
+        if (descA.length !== descB.length) return 0;
         let dot = 0, normA = 0, normB = 0;
         for (let i = 0; i < descA.length; i++) {
             dot += descA[i] * descB[i];
@@ -496,64 +432,42 @@
         return dot / (Math.sqrt(normA) * Math.sqrt(normB));
     }
     
-    // Verificação com alta precisão E detecção de movimento
-    async function verifyFace(descriptor, isMoving) {
+    // Função para reconhecer rosto comparando com banco de dados
+    async function verifyFace(faceDescriptor) {
         if (registeredUsers.length === 0) {
-            statusDiv.innerHTML = "📛 Nenhum rosto cadastrado. Use MODO CADASTRO.";
-            return false;
-        }
-        
-        if (!isMoving) {
-            statusDiv.innerHTML = "⚠️ DETECÇÃO DE FRAUDE: Por favor, mova levemente a cabeça (validação anti-foto).";
-            liveIndicator.style.background = "#ff4444";
-            liveIndicator.innerHTML = "⚠️ MOVA A CABEÇA";
-            setTimeout(() => {
-                liveIndicator.style.background = "#ff4444";
-                liveIndicator.innerHTML = "🔴 LIVE";
-            }, 2000);
+            statusDiv.innerHTML = "📛 Nenhum rosto cadastrado. Use MODO CADASTRO primeiro.";
             return false;
         }
         
         let bestMatch = null;
         let bestScore = -1;
         for (const user of registeredUsers) {
-            const sim = cosineSimilarity(descriptor, user.descriptor);
+            const sim = cosineSimilarity(faceDescriptor, user.faceDescriptor);
             if (sim > bestScore) {
                 bestScore = sim;
                 bestMatch = user;
             }
         }
         
-        // EXIGIR 99.5% DE CERTEZA (0.995)
-        if (bestMatch && bestScore >= HIGH_THRESHOLD) {
+        // Threshold para reconhecimento facial (ajustado para boa precisão)
+        const THRESHOLD = 0.85;
+        if (bestMatch && bestScore >= THRESHOLD) {
             const horaAtual = new Date().toLocaleString('pt-BR');
-            statusDiv.innerHTML = `✅ PONTO REGISTRADO! ${bestMatch.name} · CERTEZA: ${(bestScore * 100).toFixed(2)}% (mínimo 99.5%)<br>🕒 ${horaAtual} · ACESSO LIBERADO`;
-            liveIndicator.style.background = "#00cc44";
-            liveIndicator.innerHTML = "✅ VERIFICADO";
-            setTimeout(() => {
-                liveIndicator.style.background = "#ff4444";
-                liveIndicator.innerHTML = "🔴 LIVE";
-            }, 3000);
-            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            statusDiv.innerHTML = `✅ PONTO REGISTRADO! Bem-vindo(a) ${bestMatch.name} · Confiança: ${(bestScore * 100).toFixed(1)}%<br>🕒 ${horaAtual} · Acesso liberado.`;
+            // Feedback visual
             return true;
         } else {
-            const scorePercent = bestMatch ? (bestScore * 100).toFixed(2) : '0.00';
-            statusDiv.innerHTML = `❌ ACESSO NEGADO! Similaridade: ${scorePercent}% (mínimo 99.5% exigido)<br>🔍 Certifique-se de boa iluminação e movimento natural.`;
-            liveIndicator.style.background = "#ff4444";
+            const scorePercent = bestMatch ? (bestScore * 100).toFixed(1) : '0';
+            statusDiv.innerHTML = `❌ ACESSO NEGADO: Rosto não reconhecido (similaridade ${scorePercent}%).<br>🔍 Verifique iluminação e posicione o rosto corretamente.`;
             return false;
         }
     }
     
-    // Cadastro com múltiplas capturas para maior precisão
-    async function registerFace(descriptor, isMoving) {
-        if (!isMoving) {
-            statusDiv.innerHTML = "⚠️ Para cadastro, faça um leve movimento com a cabeça (validação anti-foto).";
-            return;
-        }
-        
+    // Cadastrar novo rosto
+    async function registerFace(faceDescriptor) {
         let userName = prompt("👤 Digite o NOME do FUNCIONÁRIO para cadastrar o rosto:", `Usuário ${nextId}`);
         if (!userName || userName.trim() === "") {
-            statusDiv.innerHTML = "✖️ Cadastro cancelado.";
+            statusDiv.innerHTML = "✖️ Cadastro cancelado: nome não informado.";
             return;
         }
         userName = userName.trim();
@@ -561,15 +475,16 @@
         registeredUsers.push({
             id: nextId++,
             name: userName,
-            descriptor: descriptor,
+            faceDescriptor: faceDescriptor,
             timestamp: Date.now()
         });
         saveToLocalStorage();
         renderUserList();
-        statusDiv.innerHTML = `✨ ROSTO CADASTRADO com 99.5% de precisão para ${userName}!`;
+        statusDiv.innerHTML = `✨ ROSTO CADASTRADO com sucesso para ${userName}! (${registeredUsers.length} rostos no banco)`;
         
+        // Opção de continuar cadastrando
         if (operationMode === 'register') {
-            const continuar = confirm("Cadastro concluído! Deseja continuar cadastrando? (Cancelar muda para VERIFICAÇÃO)");
+            const continuar = confirm("Rosto cadastrado! Deseja continuar no MODO CADASTRO? (Cancelar muda para VERIFICAÇÃO)");
             if (!continuar) {
                 operationMode = "verify";
                 btnRegisterMode.style.background = "#2a2f4a";
@@ -579,149 +494,104 @@
         }
     }
     
-    // Captura manual
+    // Função principal chamada ao clicar em capturar
     async function onCapture() {
-        if (!modelsLoaded) {
-            statusDiv.innerHTML = "⏳ Modelos carregando...";
+        if (!isFaceMeshReady) {
+            statusDiv.innerHTML = "⏳ IA facial ainda carregando, aguarde...";
             return;
         }
-        if (!currentDescriptor) {
-            statusDiv.innerHTML = "🤖 Nenhum rosto detectado. Centralize o rosto!";
+        if (!lastFaceDescriptor) {
+            statusDiv.innerHTML = "🤖 Aguarde detectar um rosto válido na tela. Centralize o rosto!";
             return;
         }
-        
-        // Verificar movimento antes de capturar
-        const isMoving = detectLiveMotion(currentDetection?.landmarks?.positions);
         
         if (operationMode === "register") {
-            await registerFace(currentDescriptor, isMoving);
+            await registerFace(lastFaceDescriptor);
         } else {
-            await verifyFace(currentDescriptor, isMoving);
+            await verifyFace(lastFaceDescriptor);
         }
     }
     
-    // Loop de detecção facial
-    async function detectFaces() {
-        if (!modelsLoaded || !video.videoWidth || video.readyState < 2) return;
+    // Processamento dos frames vindos do FaceMesh
+    function onFaceMeshResults(results) {
+        if (!canvasCtx || !videoEl) return;
         
-        try {
-            const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-                .withFaceLandmarks()
-                .withFaceDescriptor();
-            
-            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-            
-            if (detection) {
-                currentDescriptor = detection.descriptor;
-                currentDetection = detection;
-                
-                // Detectar movimento em tempo real
-                const isMoving = detectLiveMotion(detection.landmarks.positions);
-                isLiveFace = isMoving;
-                
-                // Desenhar bounding box (VERDE se movimento OK, AMARELO se precisa mover)
-                const box = detection.detection.box;
-                ctx.save();
-                
-                if (isMoving) {
-                    ctx.strokeStyle = '#00ff88';
-                    ctx.lineWidth = 4;
-                } else {
-                    ctx.strokeStyle = '#ffaa44';
-                    ctx.lineWidth = 4;
-                }
-                ctx.strokeRect(box.x, box.y, box.width, box.height);
-                
-                // Pontos faciais
-                if (detection.landmarks) {
-                    ctx.fillStyle = isMoving ? '#00ccff' : '#ffaa44';
-                    for (const point of detection.landmarks.positions) {
-                        ctx.beginPath();
-                        ctx.arc(point.x, point.y, 2, 0, 2 * Math.PI);
-                        ctx.fill();
-                    }
-                }
-                
-                // Texto
-                ctx.font = "bold 14px 'Segoe UI'";
-                ctx.fillStyle = isMoving ? '#00ff88' : '#ffaa44';
-                ctx.fillText(isMoving ? "✅ Rosto detectado + movimento" : "⚠️ Movimente levemente a cabeça", box.x, box.y - 8);
-                
-                // Exibir melhor match com precisão
-                if (operationMode === "verify" && registeredUsers.length > 0 && currentDescriptor) {
-                    let bestSim = -1;
-                    let bestName = "";
-                    for (const user of registeredUsers) {
-                        const sim = cosineSimilarity(currentDescriptor, user.descriptor);
-                        if (sim > bestSim) {
-                            bestSim = sim;
-                            bestName = user.name;
-                        }
-                    }
-                    const percentMatch = (bestSim * 100).toFixed(2);
-                    ctx.font = "12px 'Segoe UI'";
-                    if (bestSim >= HIGH_THRESHOLD) {
-                        ctx.fillStyle = '#d4af37';
-                        ctx.fillText(`🎯 MATCH EXATO: ${bestName} (${percentMatch}%)`, box.x, box.y + box.height + 20);
-                    } else {
-                        ctx.fillStyle = '#ff8888';
-                        ctx.fillText(`🔍 Similaridade: ${percentMatch}% (mínimo 99.5%)`, box.x, box.y + box.height + 20);
-                    }
-                }
-                
-                ctx.restore();
-            } else {
-                currentDescriptor = null;
-                currentDetection = null;
-                previousLandmarks = null;
-                movementScore = 0;
-                ctx.font = "16px 'Segoe UI'";
-                ctx.fillStyle = '#ff8888';
-                ctx.fillText("⚠️ Nenhum rosto encontrado", 20, 50);
+        // Limpar canvas e desenhar espelho do vídeo
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+        canvasCtx.scale(-1, 1);
+        canvasCtx.drawImage(videoEl, -canvasEl.width, 0, canvasEl.width, canvasEl.height);
+        canvasCtx.restore();
+        
+        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+            // Pega o primeiro rosto detectado
+            const landmarks = results.multiFaceLandmarks[0];
+            // Desenhar pontos faciais para debug
+            canvasCtx.fillStyle = '#00ffcc';
+            for (const point of landmarks) {
+                const x = (1 - point.x) * canvasEl.width;
+                const y = point.y * canvasEl.height;
+                canvasCtx.beginPath();
+                canvasCtx.arc(x, y, 1.5, 0, 2 * Math.PI);
+                canvasCtx.fill();
             }
-        } catch (err) {
-            console.warn("Erro na detecção:", err);
+            
+            // Extrair descritor facial
+            const descriptor = extractFaceDescriptor(landmarks);
+            if (descriptor) {
+                lastFaceDescriptor = descriptor;
+                // Exibir indicador de rosto detectado
+                canvasCtx.font = "bold 14px 'Segoe UI'";
+                canvasCtx.fillStyle = "#2ecc71";
+                canvasCtx.shadowBlur = 0;
+                canvasCtx.fillText("✅ Rosto detectado", 15, 30);
+            }
+        } else {
+            lastFaceDescriptor = null;
+            canvasCtx.font = "14px 'Segoe UI'";
+            canvasCtx.fillStyle = "#ff8888";
+            canvasCtx.fillText("⚠️ Nenhum rosto encontrado", 15, 30);
         }
     }
     
+    // Inicializar FaceMesh
+    async function initFaceMesh() {
+        faceMesh = new FaceMesh({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+            }
+        });
+        
+        faceMesh.setOptions({
+            maxNumFaces: 1,
+            refineLandmarks: true,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+        
+        faceMesh.onResults(onFaceMeshResults);
+        isFaceMeshReady = true;
+        iaStatusSpan.innerHTML = "✅ FaceMesh ativo + IA";
+        statusDiv.innerHTML = "🧠 IA facial pronta! Posicione o rosto no centro.";
+    }
+    
+    // Loop de detecção contínua (enviar frames para o FaceMesh)
     function startDetectionLoop() {
         if (detectionInterval) clearInterval(detectionInterval);
-        detectionInterval = setInterval(() => {
-            if (modelsLoaded && video.readyState === 4 && video.videoWidth > 0) {
-                detectFaces();
+        detectionInterval = setInterval(async () => {
+            if (videoEl && videoEl.readyState >= 2 && isFaceMeshReady && faceMesh) {
+                await faceMesh.send({ image: videoEl });
             }
         }, 100);
     }
     
-    // CARREGAR MODELOS
-    async function loadModels() {
-        statusDiv.innerHTML = "🧠 Carregando modelos de IA (alta precisão)...";
-        iaStatusSpan.innerHTML = "⏳ Carregando...";
-        
-        // Tentativa com múltiplas fontes
-        const weightsUrl = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights';
-        try {
-            await faceapi.nets.tinyFaceDetector.loadFromUri(weightsUrl);
-            await faceapi.nets.faceLandmark68Net.loadFromUri(weightsUrl);
-            await faceapi.nets.faceRecognitionNet.loadFromUri(weightsUrl);
-        } catch(e) {
-            console.warn("CDN falhou, tentando GitHub", e);
-            await faceapi.nets.tinyFaceDetector.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights');
-            await faceapi.nets.faceLandmark68Net.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights');
-            await faceapi.nets.faceRecognitionNet.loadFromUri('https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights');
-        }
-        
-        modelsLoaded = true;
-        iaStatusSpan.innerHTML = "✅ 99.5% Precision";
-        statusDiv.innerHTML = `✅ SISTEMA PRONTO! Exigindo ${(HIGH_THRESHOLD*100).toFixed(1)}% de similaridade + movimento real.`;
-    }
-    
-    // CÂMERA
+    // ---------- GERENCIAMENTO DE CÂMARA COM FRONTAL/TRASEIRA ----------
     async function initCamera(facingMode) {
         if (currentStream) {
             currentStream.getTracks().forEach(track => track.stop());
         }
         
+        // Para celulares: 'user' = frontal, 'environment' = traseira
         const constraints = {
             video: {
                 facingMode: { exact: facingMode },
@@ -733,21 +603,29 @@
         try {
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             currentStream = stream;
-            video.srcObject = stream;
-            await video.play();
-            setTimeout(() => resizeCanvas(), 200);
-            statusDiv.innerHTML = `📷 Câmera ${facingMode === 'user' ? 'FRONTAL' : 'TRASEIRA'} ativa · Exigência: 99.5% match + movimento`;
+            videoEl.srcObject = stream;
+            await videoEl.play();
+            
+            // Configurar canvas com as dimensões do video
+            setTimeout(() => {
+                canvasEl.width = videoEl.videoWidth || 640;
+                canvasEl.height = videoEl.videoHeight || 480;
+            }, 200);
+            
+            statusDiv.innerHTML = `📷 Câmera ${facingMode === 'user' ? 'FRONTAL' : 'TRASEIRA'} ativa. Modo: ${operationMode === 'register' ? 'CADASTRO' : 'VERIFICAÇÃO'}`;
             return true;
         } catch (err) {
+            console.warn(err);
+            // Fallback: tenta sem especificar facingMode
             try {
                 const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
                 currentStream = fallbackStream;
-                video.srcObject = fallbackStream;
-                await video.play();
-                statusDiv.innerHTML = `⚠️ Câmera padrão ativa.`;
+                videoEl.srcObject = fallbackStream;
+                await videoEl.play();
+                statusDiv.innerHTML = `⚠️ Câmera padrão ativa (fallback). Troca pode não funcionar em alguns navegadores.`;
                 return true;
             } catch (err2) {
-                statusDiv.innerHTML = `🚫 Erro: ${err2.message}`;
+                statusDiv.innerHTML = `🚫 Erro ao acessar câmera: ${err2.message}. Verifique permissões.`;
                 return false;
             }
         }
@@ -756,44 +634,50 @@
     async function switchCamera() {
         const newMode = currentFacingMode === "user" ? "environment" : "user";
         currentFacingMode = newMode;
-        await initCamera(currentFacingMode);
-        resizeCanvas();
-        previousLandmarks = null;
+        const success = await initCamera(currentFacingMode);
+        if (success) {
+            statusDiv.innerHTML = `🔄 Câmera alternada para ${currentFacingMode === 'user' ? 'FRONTAL' : 'TRASEIRA'}`;
+        }
     }
     
+    // Alternar modo cadastro/verificação
     function toggleRegisterMode() {
         if (operationMode === "verify") {
             operationMode = "register";
             btnRegisterMode.style.background = "#1f6d5c";
             btnRegisterMode.innerHTML = "🔓 Modo Verificação";
-            statusDiv.innerHTML = "✍️ MODO CADASTRO · Posicione o rosto e mova levemente para validar.";
+            statusDiv.innerHTML = "✍️ MODO CADASTRO ativo! Capture o rosto e informe o nome.";
         } else {
             operationMode = "verify";
             btnRegisterMode.style.background = "#2a2f4a";
             btnRegisterMode.innerHTML = "✍️ Modo Cadastro";
-            statusDiv.innerHTML = `🔍 MODO VERIFICAÇÃO · Exigindo ${(HIGH_THRESHOLD*100).toFixed(1)}% de certeza + movimento real.`;
+            statusDiv.innerHTML = "🔍 MODO VERIFICAÇÃO ativo! O sistema reconhecerá rostos para bater ponto/segurança.";
         }
     }
     
     function clearAllData() {
-        if (confirm("⚠️ ATENÇÃO: Apagar TODOS os rostos cadastrados?")) {
+        if (confirm("⚠️ ATENÇÃO: Isso apagará TODOS os rostos cadastrados. Continuar?")) {
             registeredUsers = [];
             nextId = 1;
             saveToLocalStorage();
             renderUserList();
-            statusDiv.innerHTML = "🧹 Todos os dados foram removidos.";
+            statusDiv.innerHTML = "🧹 Todos os dados faciais foram removidos. Cadastre novos rostos no modo CADASTRO.";
         }
     }
     
-    window.addEventListener('resize', () => resizeCanvas());
-    video.addEventListener('loadeddata', () => resizeCanvas());
-    
+    // Inicialização completa
     async function init() {
+        setupCanvas();
         loadFromLocalStorage();
-        await loadModels();
-        await initCamera("user");
+        await initFaceMesh();
+        
+        // Iniciar câmera frontal por padrão (melhor para selfie)
+        currentFacingMode = "user";
+        await initCamera(currentFacingMode);
+        
         startDetectionLoop();
         
+        // Eventos
         btnSwitch.addEventListener('click', switchCamera);
         btnCapture.addEventListener('click', onCapture);
         btnRegisterMode.addEventListener('click', toggleRegisterMode);
@@ -802,7 +686,8 @@
         updateStatusByMode();
     }
     
-    init();
+    // Iniciar tudo quando a página carregar
+    window.addEventListener('load', init);
 </script>
 </body>
 </html>
