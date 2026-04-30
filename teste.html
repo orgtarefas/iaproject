@@ -3,18 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FacePonto Ultra · Método Multicamada · 99.9% Precisão</title>
-    <!-- MediaPipe FaceMesh -->
+    <title>FacePonto Pro · Sistema Robusto · Verificação Multicamada Inteligente</title>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', 'Roboto', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system;
             background: linear-gradient(135deg, #0a0f1e 0%, #0c1222 100%);
             min-height: 100vh;
             display: flex;
@@ -22,7 +16,6 @@
             align-items: center;
             padding: 16px;
         }
-
         .container {
             max-width: 650px;
             width: 100%;
@@ -30,316 +23,127 @@
             backdrop-filter: blur(12px);
             border-radius: 48px;
             padding: 20px 18px 28px;
-            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(66, 153, 225, 0.2);
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-
         h1 {
             font-size: 1.5rem;
-            font-weight: 700;
             text-align: center;
             background: linear-gradient(135deg, #E0E7FF, #A5F3FC);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
             margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            flex-wrap: wrap;
         }
-
-        h1 small {
-            font-size: 0.55rem;
-            background: #d4af37;
-            color: #1a1a2e;
-            padding: 4px 10px;
-            border-radius: 40px;
-            font-weight: bold;
-        }
-
-        .sub {
-            text-align: center;
-            color: #8e9bb5;
-            font-size: 0.65rem;
-            margin-bottom: 14px;
-            padding-bottom: 6px;
-            border-bottom: 1px dashed #2d3a5e;
-        }
-
-        .camera-panel {
-            background: #00000030;
-            border-radius: 32px;
-            padding: 12px;
-            margin-bottom: 18px;
-        }
-
-        .video-wrapper {
-            position: relative;
-            border-radius: 28px;
-            overflow: hidden;
-            background: #000;
-            aspect-ratio: 4 / 3;
-            box-shadow: 0 0 0 3px #2d3f66;
-        }
-
-        video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-        }
-
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-
-        .scan-overlay {
-            position: absolute;
-            bottom: 12px;
-            left: 12px;
-            right: 12px;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(8px);
-            border-radius: 60px;
-            padding: 8px 14px;
-            text-align: center;
-            color: white;
-            font-size: 0.65rem;
-            font-weight: 500;
-            border-left: 3px solid #d4af37;
-            z-index: 10;
-            font-family: monospace;
-        }
-
-        .controls {
-            display: flex;
-            gap: 12px;
-            margin-top: 16px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        button {
-            background: #1f2a48;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 60px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: #eef5ff;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            backdrop-filter: blur(4px);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-            border: 1px solid #334566;
-        }
-
-        button:active {
-            transform: scale(0.96);
-        }
-
-        .btn-primary {
-            background: #0f3b5e;
-            border-color: #2c7da0;
-        }
-
-        .btn-capture {
-            background: #0f3b2c;
-            border-color: #2ecc71;
-            color: #ccf0e0;
-        }
-
-        .btn-danger {
-            background: #5e2a2a;
-            border-color: #e06c6c;
-        }
-
-        .info-card {
-            background: #0f1422cc;
-            border-radius: 32px;
-            padding: 16px;
-            margin-top: 18px;
-        }
-
-        .section-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #9bb5e6;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .user-list {
-            max-height: 180px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .user-item {
-            background: #111a2be0;
-            border-radius: 18px;
-            padding: 8px 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-left: 4px solid #d4af37;
-        }
-
-        .user-name {
-            font-weight: 700;
-            color: #d9e6ff;
-            font-size: 0.85rem;
-        }
-
-        .user-id {
-            font-size: 0.65rem;
-            color: #6c86b0;
-        }
-
-        .badge {
-            background: #2c3e66;
-            border-radius: 30px;
-            padding: 4px 12px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .status-msg {
-            background: #00000066;
-            border-radius: 30px;
-            padding: 8px 12px;
-            font-size: 0.7rem;
-            text-align: center;
-            color: #b9d0f9;
-            margin-top: 12px;
-        }
-
-        .ia-badge {
-            background: linear-gradient(90deg, #1e2b4e, #263a60);
-            border-radius: 20px;
-            padding: 4px 10px;
-            font-size: 0.65rem;
-        }
-
-        .high-precision {
-            background: #d4af37;
-            color: #1a1a2e;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.65rem;
-            font-weight: bold;
-        }
-
-        .metric-bar {
-            margin-top: 8px;
-            padding: 6px;
-            background: #00000040;
-            border-radius: 12px;
-            font-size: 0.6rem;
-            text-align: center;
-            font-family: monospace;
-        }
+        h1 small { font-size: 0.55rem; background: #d4af37; color: #1a1a2e; padding: 4px 10px; border-radius: 40px; font-weight: bold; display: inline-block; margin-left: 8px; }
+        .sub { text-align: center; color: #8e9bb5; font-size: 0.65rem; margin-bottom: 14px; }
+        .camera-panel { background: #00000030; border-radius: 32px; padding: 12px; margin-bottom: 18px; }
+        .video-wrapper { position: relative; border-radius: 28px; overflow: hidden; background: #000; aspect-ratio: 4 / 3; box-shadow: 0 0 0 3px #2d3f66; }
+        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .scan-overlay { position: absolute; bottom: 12px; left: 12px; right: 12px; background: rgba(0,0,0,0.85); border-radius: 60px; padding: 8px 14px; text-align: center; color: white; font-size: 0.65rem; border-left: 3px solid #d4af37; z-index: 10; }
+        .controls { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; justify-content: center; }
+        button { background: #1f2a48; border: none; padding: 10px 18px; border-radius: 60px; font-weight: 600; font-size: 0.85rem; color: #eef5ff; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s; border: 1px solid #334566; }
+        button:active { transform: scale(0.96); }
+        .btn-primary { background: #0f3b5e; border-color: #2c7da0; }
+        .btn-capture { background: #0f3b2c; border-color: #2ecc71; color: #ccf0e0; }
+        .btn-danger { background: #5e2a2a; border-color: #e06c6c; }
+        .info-card { background: #0f1422cc; border-radius: 32px; padding: 16px; margin-top: 18px; }
+        .section-title { font-size: 0.85rem; font-weight: 600; color: #9bb5e6; margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .user-list { max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .user-item { background: #111a2be0; border-radius: 18px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #d4af37; }
+        .user-name { font-weight: 700; color: #d9e6ff; font-size: 0.85rem; }
+        .user-id { font-size: 0.65rem; color: #6c86b0; }
+        .badge { background: #2c3e66; border-radius: 30px; padding: 4px 12px; font-size: 0.7rem; cursor: pointer; }
+        .status-msg { background: #00000066; border-radius: 30px; padding: 8px 12px; font-size: 0.7rem; text-align: center; color: #b9d0f9; margin-top: 12px; }
+        .ia-badge { background: linear-gradient(90deg, #1e2b4e, #263a60); border-radius: 20px; padding: 4px 10px; font-size: 0.65rem; }
+        .score-bar { background: #00000040; border-radius: 12px; padding: 6px 10px; margin-top: 8px; font-size: 0.6rem; font-family: monospace; text-align: center; }
+        .high { background: #00aa4433; color: #00ff88; }
+        .medium { background: #ffaa4433; color: #ffaa44; }
+        .low { background: #ff444433; color: #ff8888; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>👤 FacePonto Ultra <small>MÉTODO MULTICAMADA · 99.9%</small></h1>
-    <div class="sub">🔒 Combinação: Distância Euclidiana + Cosseno + Proporções Faciais</div>
+    <h1>👤 FacePonto Pro <small>THRESHOLD DINÂMICO · VALIDAÇÃO REGIONAL</small></h1>
+    <div class="sub">🔒 Verificação por partes (olhos/nariz/boca) + Média mínima 92%</div>
 
     <div class="camera-panel">
         <div class="video-wrapper">
             <video id="video" autoplay playsinline muted></video>
-            <canvas id="overlayCanvas" width="640" height="480"></canvas>
-            <div class="scan-overlay" id="scanOverlay">
-                🎯 Sistema Multicamada · Análise rigorosa
-            </div>
+            <canvas id="overlayCanvas"></canvas>
+            <div class="scan-overlay" id="scanOverlay">🎯 Sistema robusto · Validação regional</div>
         </div>
         <div class="controls">
             <button id="btnSwitchCamera" class="btn-primary">🔄 Trocar câmera</button>
             <button id="btnCapture" class="btn-capture">📸 Verificar / Cadastrar</button>
-            <button id="btnRegisterMode" class="btn-primary" style="background:#2a2f4a;">✍️ Modo Cadastro</button>
+            <button id="btnRegisterMode" class="btn-primary">✍️ Modo Cadastro</button>
         </div>
-        <div class="status-msg" id="statusMsg">
-            ⚡ Inicializando sistema multicamada...
-        </div>
-        <div class="metric-bar" id="metricBar">
-            🧬 Aguardando detecção facial...
-        </div>
+        <div class="status-msg" id="statusMsg">⚡ Inicializando sistema robusto...</div>
+        <div class="score-bar" id="scoreBar">🧬 Aguardando detecção facial...</div>
     </div>
 
     <div class="info-card">
         <div class="section-title">
-            🧠 Banco de Rostos Cadastrados
-            <span class="ia-badge" id="iaStatus">🔍 Inicializando...</span>
-            <span class="high-precision">🎯 Threshold: 99.9%</span>
+            🧠 Banco de Rostos
+            <span class="ia-badge" id="iaStatus">Iniciando...</span>
         </div>
-        <div id="userList" class="user-list">
-            <div style="text-align:center; color:#6e85b0; padding: 20px;">📌 Nenhum rosto cadastrado.</div>
-        </div>
+        <div id="userList" class="user-list"><div style="text-align:center; color:#6e85b0; padding: 20px;">📌 Nenhum rosto cadastrado.</div></div>
         <div style="display: flex; justify-content: space-between; margin-top: 14px;">
-            <span style="font-size: 0.6rem; color:#7187b5;">🔐 Método: Distância Euclidiana Ponderada + Cosseno + Proporções</span>
+            <span style="font-size: 0.6rem;">🔐 Validação: olhos 35% + nariz 25% + boca 20% + contorno 20%</span>
             <button id="clearAllBtn" class="btn-danger" style="padding: 4px 12px;">🗑️ Limpar</button>
         </div>
     </div>
 </div>
 
 <script>
-    // --------------------------------------------------------------
-    // SISTEMA DE RECONHECIMENTO FACIAL MULTICAMADA
-    // Método 1: Distância Euclidiana Ponderada (ênfase em olhos, nariz, boca)
-    // Método 2: Similaridade de Cosseno (orientação espacial)
-    // Método 3: Proporções faciais (índices biométricos)
-    // Threshold combinado: 99.9% (rigor extremo)
-    // --------------------------------------------------------------
+    // ==============================================================
+    // SISTEMA ROBUSTO DE RECONHECIMENTO FACIAL
+    // - THRESHOLDS REALISTAS: Mínimo 92% GLOBAL + validação regional
+    // - Divide o rosto em regiões (olhos, nariz, boca, contorno)
+    // - Cada região tem peso específico e threshold independente
+    // - Cadastro com múltiplos frames para média mais precisa
+    // ==============================================================
     
     let faceMesh = null;
     let currentStream = null;
     let currentFacingMode = "user";
     let detectionLoop = null;
-    let currentDescriptor = null;
-    let currentLandmarks = null;
-    let currentProportions = null;
     let isModelReady = false;
     
-    // Banco de rostos
+    // Dados faciais atuais
+    let currentLandmarks = null;
+    let currentRegionalDescriptors = null; // { eyes, nose, mouth, contour, full }
+    
+    // Banco de usuários
     let registeredUsers = [];
     let nextId = 1;
-    let operationMode = "verify";
+    let operationMode = "verify"; // 'verify' or 'register'
     
-    // Pesos para pontos faciais (regiões mais importantes)
-    const FACE_REGION_WEIGHTS = {
-        // Olhos e sobrancelhas (mais importantes para diferenciação)
-        leftEye: 1.5, rightEye: 1.5,
-        // Nariz
-        nose: 1.2,
-        // Boca
-        mouth: 1.3,
-        // Contorno facial
-        jawline: 0.8,
-        // Outros pontos
-        default: 0.9
+    // Para cadastro com múltiplas amostras
+    let registrationSamples = [];
+    let isCollectingSamples = false;
+    let sampleCount = 0;
+    const REQUIRED_SAMPLES = 5;
+    
+    // Índices das regiões faciais no FaceMesh (468 pontos)
+    const REGION_INDICES = {
+        eyes: [33, 133, 157, 158, 159, 160, 161, 173, 243, 246, 249, 263, 362, 373, 374, 380, 381, 382, 386, 387, 388, 390, 397, 398, 399, 400, 401, 402],
+        nose: [1, 2, 3, 4, 5, 6, 19, 20, 27, 28, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144],
+        mouth: [61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227],
+        contour: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300, 310, 320, 330, 340, 350, 360, 370, 380, 390, 400, 410, 420, 430, 440, 450]
     };
     
-    // Índices dos pontos no FaceMesh (468 pontos)
-    const EYE_INDICES = [33, 133, 157, 158, 159, 160, 161, 173, 243, 246, 249, 263, 362, 373, 374, 380, 381, 382, 386, 387, 388, 390, 397, 398, 399, 400, 401, 402];
-    const NOSE_INDICES = [1, 2, 3, 4, 5, 6, 19, 20, 27, 28, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144];
-    const MOUTH_INDICES = [61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227];
+    // Pesos das regiões para similaridade final
+    const REGION_WEIGHTS = {
+        eyes: 0.35,    // olhos são muito distintivos
+        nose: 0.25,    // nariz
+        mouth: 0.20,   // boca
+        contour: 0.20  // contorno facial
+    };
+    
+    const GLOBAL_THRESHOLD = 0.92;     // 92% mínimo global
+    const REGION_MIN_THRESHOLD = 0.85;  // cada região deve ter pelo menos 85%
     
     // Elementos DOM
     const video = document.getElementById('video');
@@ -352,7 +156,7 @@
     const statusDiv = document.getElementById('statusMsg');
     const userListDiv = document.getElementById('userList');
     const iaStatusSpan = document.getElementById('iaStatus');
-    const metricBar = document.getElementById('metricBar');
+    const scoreBar = document.getElementById('scoreBar');
     const scanOverlay = document.getElementById('scanOverlay');
     
     function resizeCanvas() {
@@ -363,7 +167,6 @@
     }
     
     function renderUserList() {
-        if (!userListDiv) return;
         if (registeredUsers.length === 0) {
             userListDiv.innerHTML = `<div style="text-align:center; color:#6e85b0; padding: 20px;">📌 Nenhum rosto cadastrado.</div>`;
             return;
@@ -372,10 +175,8 @@
         registeredUsers.forEach(user => {
             html += `
                 <div class="user-item">
-                    <div>
-                        <div class="user-name">👤 ${escapeHtml(user.name)}</div>
-                        <div class="user-id">ID #${user.id} · ${new Date(user.timestamp).toLocaleDateString()}</div>
-                    </div>
+                    <div><div class="user-name">👤 ${escapeHtml(user.name)}</div>
+                    <div class="user-id">ID #${user.id} · ${new Date(user.timestamp).toLocaleDateString()}</div></div>
                     <button class="badge" onclick="window.deleteUser(${user.id})">🗑️</button>
                 </div>
             `;
@@ -383,129 +184,59 @@
         userListDiv.innerHTML = html;
     }
     
-    function escapeHtml(str) {
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
+    function escapeHtml(str) { return str.replace(/[&<>]/g, function(m) { return m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'; }); }
     
     function saveToLocalStorage() {
-        const toStore = registeredUsers.map(user => ({
-            ...user,
-            descriptor: Array.from(user.descriptor),
-            proportions: user.proportions
-        }));
-        localStorage.setItem('facePontoMultiLayer', JSON.stringify(toStore));
+        const toStore = registeredUsers.map(user => ({ ...user, regionalDescriptors: user.regionalDescriptors }));
+        localStorage.setItem('facePontoRobust', JSON.stringify(toStore));
     }
     
     function loadFromLocalStorage() {
-        const raw = localStorage.getItem('facePontoMultiLayer');
+        const raw = localStorage.getItem('facePontoRobust');
         if (raw) {
             try {
                 const parsed = JSON.parse(raw);
-                registeredUsers = parsed.map(user => ({
-                    ...user,
-                    descriptor: new Float32Array(user.descriptor)
-                }));
-                if (registeredUsers.length > 0) {
-                    nextId = Math.max(...registeredUsers.map(u => u.id)) + 1;
-                }
+                registeredUsers = parsed;
+                if (registeredUsers.length > 0) nextId = Math.max(...registeredUsers.map(u => u.id)) + 1;
                 renderUserList();
             } catch(e) { console.warn(e); }
         }
     }
     
     window.deleteUser = function(id) {
-        registeredUsers = registeredUsers.filter(user => user.id !== id);
+        registeredUsers = registeredUsers.filter(u => u.id !== id);
         saveToLocalStorage();
         renderUserList();
         statusDiv.innerHTML = `🗑️ Rosto removido.`;
     };
     
-    // Extrair proporções faciais (índices biométricos)
-    function extractFacialProportions(landmarks) {
-        if (!landmarks || landmarks.length < 100) return null;
-        
-        // Função para calcular distância entre dois pontos
-        const dist = (a, b) => {
-            const dx = a.x - b.x;
-            const dy = a.y - b.y;
-            const dz = a.z - b.z;
-            return Math.sqrt(dx*dx + dy*dy + dz*dz);
+    // Extrai descritor de uma região específica
+    function extractRegionDescriptor(landmarks, indices) {
+        const desc = [];
+        for (const idx of indices) {
+            if (idx < landmarks.length) {
+                desc.push(landmarks[idx].x);
+                desc.push(landmarks[idx].y);
+                desc.push(landmarks[idx].z);
+            }
+        }
+        return new Float32Array(desc);
+    }
+    
+    // Extrai todos os descritores regionais
+    function extractAllRegionalDescriptors(landmarks) {
+        return {
+            full: extractRegionDescriptor(landmarks, [...Array(landmarks.length).keys()]),
+            eyes: extractRegionDescriptor(landmarks, REGION_INDICES.eyes),
+            nose: extractRegionDescriptor(landmarks, REGION_INDICES.nose),
+            mouth: extractRegionDescriptor(landmarks, REGION_INDICES.mouth),
+            contour: extractRegionDescriptor(landmarks, REGION_INDICES.contour)
         };
-        
-        try {
-            // Pontos chave
-            const leftEye = landmarks[33];
-            const rightEye = landmarks[263];
-            const noseTip = landmarks[1];
-            const leftMouth = landmarks[61];
-            const rightMouth = landmarks[291];
-            const topLip = landmarks[13];
-            const bottomLip = landmarks[14];
-            const leftEyebrow = landmarks[55];
-            const rightEyebrow = landmarks[285];
-            const chin = landmarks[152];
-            const leftCheek = landmarks[117];
-            const rightCheek = landmarks[347];
-            
-            // Proporções (índices normalizados)
-            const eyeDistance = dist(leftEye, rightEye);
-            const mouthWidth = dist(leftMouth, rightMouth);
-            const faceHeight = dist(noseTip, chin);
-            const eyeToMouth = dist(noseTip, topLip);
-            const eyebrowToEye = dist(leftEyebrow, leftEye);
-            const cheekWidth = dist(leftCheek, rightCheek);
-            
-            return {
-                eyeDistance: eyeDistance,
-                mouthWidth: mouthWidth,
-                faceHeight: faceHeight,
-                eyeToMouthRatio: eyeToMouth / (faceHeight + 0.001),
-                eyeDistanceRatio: eyeDistance / (cheekWidth + 0.001),
-                eyebrowToEyeRatio: eyebrowToEye / (eyeDistance + 0.001),
-                mouthToFaceRatio: mouthWidth / (faceHeight + 0.001)
-            };
-        } catch(e) {
-            return null;
-        }
     }
     
-    // ============ MÉTODO 1: DISTÂNCIA EUCLIDIANA PONDERADA ============
-    function weightedEuclideanDistance(descA, descB) {
-        let sum = 0;
-        let weightSum = 0;
-        
-        for (let i = 0; i < descA.length; i += 3) {
-            const pointIdx = i / 3;
-            let weight = 1.0;
-            
-            // Aplicar pesos baseados na região do rosto
-            if (EYE_INDICES.includes(pointIdx)) weight = FACE_REGION_WEIGHTS.leftEye;
-            else if (NOSE_INDICES.includes(pointIdx)) weight = FACE_REGION_WEIGHTS.nose;
-            else if (MOUTH_INDICES.includes(pointIdx)) weight = FACE_REGION_WEIGHTS.mouth;
-            else weight = FACE_REGION_WEIGHTS.default;
-            
-            const dx = descA[i] - descB[i];
-            const dy = descA[i+1] - descB[i+1];
-            const dz = descA[i+2] - descB[i+2];
-            const squared = dx*dx + dy*dy + dz*dz;
-            sum += squared * weight;
-            weightSum += weight;
-        }
-        
-        const normalizedDist = Math.sqrt(sum / weightSum);
-        // Converter distância para similaridade (quanto menor a distância, maior a similaridade)
-        // Normalização empírica: distância típica entre pessoas diferentes ~0.45, entre mesma ~0.05
-        const similarity = Math.max(0, 1 - (normalizedDist / 0.15));
-        return Math.min(1, similarity);
-    }
-    
-    // ============ MÉTODO 2: SIMILARIDADE DE COSSENO ============
+    // Similaridade de cosseno robusta
     function cosineSimilarity(descA, descB) {
+        if (!descA || !descB || descA.length !== descB.length) return 0;
         let dot = 0, normA = 0, normB = 0;
         for (let i = 0; i < descA.length; i++) {
             dot += descA[i] * descB[i];
@@ -513,85 +244,89 @@
             normB += descB[i] * descB[i];
         }
         if (normA === 0 || normB === 0) return 0;
-        const similarity = dot / (Math.sqrt(normA) * Math.sqrt(normB));
-        return Math.max(0, Math.min(1, (similarity + 1) / 2));
+        return (dot / (Math.sqrt(normA) * Math.sqrt(normB)) + 1) / 2; // normalizado entre 0 e 1
     }
     
-    // ============ MÉTODO 3: PROPORÇÕES FACIAIS ============
-    function proportionsSimilarity(propsA, propsB) {
-        if (!propsA || !propsB) return 0;
-        
-        const metrics = ['eyeDistance', 'mouthWidth', 'faceHeight', 'eyeToMouthRatio', 'eyeDistanceRatio', 'eyebrowToEyeRatio', 'mouthToFaceRatio'];
-        let totalScore = 0;
-        
-        for (const metric of metrics) {
-            const valA = propsA[metric];
-            const valB = propsB[metric];
-            if (valA && valB) {
-                const ratio = Math.min(valA, valB) / Math.max(valA, valB);
-                totalScore += ratio;
-            }
-        }
-        
-        return totalScore / metrics.length;
-    }
-    
-    // ============ MÉTODO COMBINADO (FINAL) ============
-    function combinedSimilarity(descriptorA, descriptorB, propsA, propsB) {
-        const euclideanScore = weightedEuclideanDistance(descriptorA, descriptorB);
-        const cosineScore = cosineSimilarity(descriptorA, descriptorB);
-        const proportionsScore = proportionsSimilarity(propsA, propsB);
-        
-        // Pesos: Euclidiana 40%, Cosseno 30%, Proporções 30%
-        const finalScore = (euclideanScore * 0.4) + (cosineScore * 0.3) + (proportionsScore * 0.3);
-        
-        return {
-            total: finalScore,
-            euclidean: euclideanScore,
-            cosine: cosineScore,
-            proportions: proportionsScore
+    // Similaridade por região (média ponderada das regiões)
+    function compareRegionalDescriptors(descA, descB) {
+        const results = {
+            eyes: cosineSimilarity(descA.eyes, descB.eyes),
+            nose: cosineSimilarity(descA.nose, descB.nose),
+            mouth: cosineSimilarity(descA.mouth, descB.mouth),
+            contour: cosineSimilarity(descA.contour, descB.contour),
+            full: cosineSimilarity(descA.full, descB.full)
         };
+        
+        // Média ponderada regional
+        const weightedScore = 
+            results.eyes * REGION_WEIGHTS.eyes +
+            results.nose * REGION_WEIGHTS.nose +
+            results.mouth * REGION_WEIGHTS.mouth +
+            results.contour * REGION_WEIGHTS.contour;
+        
+        return { weightedScore, regionScores: results };
     }
     
-    function verifyFace(descriptor, proportions) {
+    // Verificação robusta
+    function verifyFace(regionalDescriptors) {
         if (registeredUsers.length === 0) {
-            statusDiv.innerHTML = "📛 Nenhum rosto cadastrado. Use MODO CADASTRO.";
+            statusDiv.innerHTML = "📛 Nenhum rosto cadastrado. Ative MODO CADASTRO.";
             return false;
         }
         
         let bestMatch = null;
-        let bestScores = null;
-        let bestScore = -1;
+        let bestMatchScore = -1;
+        let bestRegionScores = null;
         
         for (const user of registeredUsers) {
-            const scores = combinedSimilarity(descriptor, user.descriptor, proportions, user.proportions);
-            if (scores.total > bestScore) {
-                bestScore = scores.total;
+            const comparison = compareRegionalDescriptors(regionalDescriptors, user.regionalDescriptors);
+            
+            // Verifica se todas as regiões estão acima do mínimo
+            const allRegionsValid = 
+                comparison.regionScores.eyes >= REGION_MIN_THRESHOLD &&
+                comparison.regionScores.nose >= REGION_MIN_THRESHOLD &&
+                comparison.regionScores.mouth >= REGION_MIN_THRESHOLD &&
+                comparison.regionScores.contour >= REGION_MIN_THRESHOLD;
+            
+            // Verifica se peso global está acima do threshold
+            const globalValid = comparison.weightedScore >= GLOBAL_THRESHOLD;
+            
+            const isValid = allRegionsValid && globalValid;
+            
+            if (isValid && comparison.weightedScore > bestMatchScore) {
+                bestMatchScore = comparison.weightedScore;
                 bestMatch = user;
-                bestScores = scores;
+                bestRegionScores = comparison.regionScores;
             }
         }
         
-        // THRESHOLD RIGOROSO: 99.5% para acesso
-        const THRESHOLD = 0.995;
-        const percentTotal = (bestScore * 100).toFixed(4);
+        const percent = (bestMatchScore * 100).toFixed(2);
         
-        metricBar.innerHTML = `📊 Euclidiana: ${((bestScores?.euclidean || 0)*100).toFixed(2)}% | Cosseno: ${((bestScores?.cosine || 0)*100).toFixed(2)}% | Proporções: ${((bestScores?.proportions || 0)*100).toFixed(2)}% | Total: ${percentTotal}%`;
-        
-        if (bestMatch && bestScore >= THRESHOLD) {
-            const horaAtual = new Date().toLocaleString('pt-BR');
-            statusDiv.innerHTML = `✅ PONTO REGISTRADO! ${bestMatch.name} · CERTEZA TOTAL: ${percentTotal}% (mínimo 99.5%)<br>🕒 ${horaAtual}`;
+        if (bestMatch && bestMatchScore >= GLOBAL_THRESHOLD) {
+            const hora = new Date().toLocaleString('pt-BR');
+            statusDiv.innerHTML = `✅ PONTO REGISTRADO! ${bestMatch.name} · Confiança: ${percent}%<br>🕒 ${hora}`;
             scanOverlay.style.borderLeftColor = "#2ecc71";
-            setTimeout(() => { scanOverlay.style.borderLeftColor = "#d4af37"; }, 2000);
+            setTimeout(() => scanOverlay.style.borderLeftColor = "#d4af37", 2000);
             if (navigator.vibrate) navigator.vibrate(200);
+            scoreBar.innerHTML = `✅ APROVADO! Global: ${percent}% | Olhos: ${(bestRegionScores?.eyes*100).toFixed(1)}% | Nariz: ${(bestRegionScores?.nose*100).toFixed(1)}% | Boca: ${(bestRegionScores?.mouth*100).toFixed(1)}%`;
+            scoreBar.className = "score-bar high";
             return true;
         } else {
-            statusDiv.innerHTML = `❌ ACESSO NEGADO! Similaridade total: ${percentTotal}% (mínimo 99.5%)<br>🔍 Pessoas diferentes possuem similaridade muito abaixo de 99%`;
+            const bestPercent = bestMatch ? (bestMatchScore * 100).toFixed(2) : '0';
+            statusDiv.innerHTML = `❌ ACESSO NEGADO! Melhor similaridade: ${bestPercent}% (mínimo ${GLOBAL_THRESHOLD*100}% global + cada região ≥85%)`;
+            scoreBar.innerHTML = `❌ NEGADO: ${bestPercent}% | Exigido: ${GLOBAL_THRESHOLD*100}% + regiões ≥85%`;
+            scoreBar.className = "score-bar low";
             return false;
         }
     }
     
-    async function registerFace(descriptor, proportions) {
+    // Cadastro com múltiplas amostras
+    async function startRegistration() {
+        if (isCollectingSamples) {
+            statusDiv.innerHTML = "⚠️ Já está coletando amostras. Aguarde...";
+            return;
+        }
+        
         let userName = prompt("👤 Digite o NOME do FUNCIONÁRIO:", `Usuário ${nextId}`);
         if (!userName || userName.trim() === "") {
             statusDiv.innerHTML = "✖️ Cadastro cancelado.";
@@ -599,28 +334,96 @@
         }
         userName = userName.trim();
         
+        registrationSamples = [];
+        sampleCount = 0;
+        isCollectingSamples = true;
+        
+        statusDiv.innerHTML = `📸 Coletando amostras faciais (${sampleCount}/${REQUIRED_SAMPLES}) - Mova levemente a cabeça entre as capturas...`;
+        scanOverlay.innerHTML = `📸 Cadastro ativo: posicione o rosto (${sampleCount}/${REQUIRED_SAMPLES})`;
+        
+        // Coletar amostras automaticamente a cada 0.8 segundos
+        const collectInterval = setInterval(() => {
+            if (!isCollectingSamples) {
+                clearInterval(collectInterval);
+                return;
+            }
+            
+            if (currentLandmarks && currentLandmarks.length > 0) {
+                const descriptors = extractAllRegionalDescriptors(currentLandmarks);
+                registrationSamples.push(descriptors);
+                sampleCount++;
+                statusDiv.innerHTML = `📸 Coletando amostras (${sampleCount}/${REQUIRED_SAMPLES}) - Mantenha o rosto visível`;
+                scanOverlay.innerHTML = `📸 Amostra ${sampleCount}/${REQUIRED_SAMPLES}`;
+                
+                if (sampleCount >= REQUIRED_SAMPLES) {
+                    clearInterval(collectInterval);
+                    finalizeRegistration(userName);
+                }
+            } else {
+                statusDiv.innerHTML = `⚠️ Nenhum rosto detectado. Centralize o rosto! (${sampleCount}/${REQUIRED_SAMPLES})`;
+            }
+        }, 800);
+        
+        // Timeout de segurança
+        setTimeout(() => {
+            if (isCollectingSamples && sampleCount < REQUIRED_SAMPLES) {
+                clearInterval(collectInterval);
+                isCollectingSamples = false;
+                statusDiv.innerHTML = "❌ Cadastro cancelado: tempo esgotado. Tente novamente.";
+                scanOverlay.innerHTML = "🎯 Cadastro cancelado";
+            }
+        }, 10000);
+    }
+    
+    function finalizeRegistration(userName) {
+        isCollectingSamples = false;
+        
+        // Média dos descritores regionais
+        const avgDescriptors = {
+            eyes: averageDescriptors(registrationSamples.map(s => s.eyes)),
+            nose: averageDescriptors(registrationSamples.map(s => s.nose)),
+            mouth: averageDescriptors(registrationSamples.map(s => s.mouth)),
+            contour: averageDescriptors(registrationSamples.map(s => s.contour)),
+            full: averageDescriptors(registrationSamples.map(s => s.full))
+        };
+        
         registeredUsers.push({
             id: nextId++,
             name: userName,
-            descriptor: descriptor,
-            proportions: proportions,
+            regionalDescriptors: avgDescriptors,
             timestamp: Date.now()
         });
+        
         saveToLocalStorage();
         renderUserList();
-        statusDiv.innerHTML = `✨ ROSTO CADASTRADO: ${userName}! (Método multicamada)`;
+        statusDiv.innerHTML = `✨ ROSTO CADASTRADO com sucesso para ${userName}! (${REQUIRED_SAMPLES} amostras integradas)`;
+        scanOverlay.innerHTML = `✅ ${userName} cadastrado com sucesso!`;
         scanOverlay.style.borderLeftColor = "#2ecc71";
-        setTimeout(() => { scanOverlay.style.borderLeftColor = "#d4af37"; }, 1500);
+        setTimeout(() => scanOverlay.style.borderLeftColor = "#d4af37", 2000);
         
         if (operationMode === 'register') {
-            const continuar = confirm("Cadastrado! Continuar cadastrando? (Cancelar = modo verificação)");
+            const continuar = confirm("Cadastrado! Continuar no modo CADASTRO? (Cancelar = modo VERIFICAÇÃO)");
             if (!continuar) {
                 operationMode = "verify";
                 btnRegisterMode.style.background = "#2a2f4a";
                 btnRegisterMode.innerHTML = "✍️ Modo Cadastro";
-                updateStatusByMode();
+                updateModeUI();
             }
         }
+    }
+    
+    function averageDescriptors(descriptorsArray) {
+        if (descriptorsArray.length === 0) return descriptorsArray[0];
+        const avg = new Float32Array(descriptorsArray[0].length);
+        for (const desc of descriptorsArray) {
+            for (let i = 0; i < desc.length; i++) {
+                avg[i] += desc[i];
+            }
+        }
+        for (let i = 0; i < avg.length; i++) {
+            avg[i] /= descriptorsArray.length;
+        }
+        return avg;
     }
     
     async function onCapture() {
@@ -628,37 +431,51 @@
             statusDiv.innerHTML = "⏳ Aguardando inicialização...";
             return;
         }
-        if (!currentDescriptor || !currentProportions) {
+        if (!currentLandmarks || currentLandmarks.length === 0) {
             statusDiv.innerHTML = "🤖 Nenhum rosto detectado. Centralize bem o rosto!";
             return;
         }
         
         if (operationMode === "register") {
-            await registerFace(currentDescriptor, currentProportions);
+            await startRegistration();
         } else {
-            await verifyFace(currentDescriptor, currentProportions);
+            const descriptors = extractAllRegionalDescriptors(currentLandmarks);
+            verifyFace(descriptors);
         }
     }
     
-    function updateStatusByMode() {
+    function updateModeUI() {
         if (operationMode === 'verify') {
-            statusDiv.innerHTML = `🔍 MODO VERIFICAÇÃO · 3 métodos combinados · >=99.5% exigido`;
-            scanOverlay.innerHTML = "🔍 3 MÉTODOS: Euclidiana + Cosseno + Proporções";
+            statusDiv.innerHTML = `🔍 MODO VERIFICAÇÃO · Exigindo ${GLOBAL_THRESHOLD*100}% global + cada região ≥85%`;
+            scanOverlay.innerHTML = "🔍 Modo VERIFICAÇÃO · Aproxime o rosto";
+            btnRegisterMode.style.background = "#2a2f4a";
+            btnRegisterMode.innerHTML = "✍️ Modo Cadastro";
         } else {
-            statusDiv.innerHTML = `✍️ MODO CADASTRO · Posicione o rosto e clique em Verificar/Cadastrar`;
-            scanOverlay.innerHTML = "✍️ Cadastro · Método multicamada";
+            statusDiv.innerHTML = `✍️ MODO CADASTRO · Clique em Verificar/Cadastrar e mantenha o rosto por 5 amostras`;
+            scanOverlay.innerHTML = "✍️ Modo CADASTRO · Pressione o botão e aguarde 5 amostras";
+            btnRegisterMode.style.background = "#1f6d5c";
+            btnRegisterMode.innerHTML = "🔓 Modo Verificação";
         }
     }
     
-    // Desenhar pontos de verificação
+    function toggleRegisterMode() {
+        if (isCollectingSamples) {
+            statusDiv.innerHTML = "⚠️ Aguarde finalizar o cadastro atual...";
+            return;
+        }
+        operationMode = operationMode === "verify" ? "register" : "verify";
+        updateModeUI();
+    }
+    
+    // Desenho facial com pontos coloridos por região
     function drawFaceMesh(landmarks) {
         ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-        
         if (!landmarks || landmarks.length === 0) {
             ctx.font = "16px 'Segoe UI'";
             ctx.fillStyle = '#ff8888';
             ctx.fillText("⚠️ Nenhum rosto encontrado", 20, 50);
-            metricBar.innerHTML = "🧬 Aguardando rosto...";
+            scoreBar.innerHTML = "🧬 Aguardando rosto...";
+            scoreBar.className = "score-bar";
             return;
         }
         
@@ -677,16 +494,16 @@
         ctx.lineWidth = 3;
         ctx.strokeRect(minX - 8, minY - 8, (maxX - minX) + 16, (maxY - minY) + 16);
         
-        // Pontos coloridos por região
+        // Desenhar pontos por região
         for (let i = 0; i < landmarks.length; i++) {
             const point = landmarks[i];
             const x = (1 - point.x) * overlayCanvas.width;
             const y = point.y * overlayCanvas.height;
             
             let color;
-            if (EYE_INDICES.includes(i)) color = '#ff6666';
-            else if (NOSE_INDICES.includes(i)) color = '#66ff66';
-            else if (MOUTH_INDICES.includes(i)) color = '#ffaa44';
+            if (REGION_INDICES.eyes.includes(i)) color = '#ff6666';
+            else if (REGION_INDICES.nose.includes(i)) color = '#66ff66';
+            else if (REGION_INDICES.mouth.includes(i)) color = '#ffaa44';
             else color = '#44aaff';
             
             ctx.beginPath();
@@ -695,110 +512,90 @@
             ctx.fill();
         }
         
-        ctx.font = "bold 12px monospace";
+        ctx.font = "bold 11px monospace";
         ctx.fillStyle = '#00ff88';
-        ctx.fillText(`🔘 ${landmarks.length} pontos · 3 métodos`, minX - 8, minY - 12);
+        ctx.fillText(`🔘 ${landmarks.length} pontos · Verificação regional`, minX - 8, minY - 12);
         ctx.restore();
     }
     
+    // FaceMesh callbacks
     function onFaceMeshResults(results) {
         if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-            const landmarks = results.multiFaceLandmarks[0];
-            currentLandmarks = landmarks;
+            currentLandmarks = results.multiFaceLandmarks[0];
+            drawFaceMesh(currentLandmarks);
             
-            const descriptor = [];
-            for (let i = 0; i < landmarks.length; i++) {
-                descriptor.push(landmarks[i].x);
-                descriptor.push(landmarks[i].y);
-                descriptor.push(landmarks[i].z);
+            if (!isCollectingSamples && operationMode === "verify") {
+                const descriptors = extractAllRegionalDescriptors(currentLandmarks);
+                // Comparação em tempo real apenas para feedback visual sem bloquear
+                if (registeredUsers.length > 0) {
+                    let best = 0;
+                    for (const user of registeredUsers) {
+                        const comp = compareRegionalDescriptors(descriptors, user.regionalDescriptors);
+                        if (comp.weightedScore > best) best = comp.weightedScore;
+                    }
+                    const percent = (best * 100).toFixed(1);
+                    if (best >= GLOBAL_THRESHOLD) {
+                        scoreBar.innerHTML = `📊 Similaridade: ${percent}% (OK) | Sistema pronto`;
+                        scoreBar.className = "score-bar high";
+                    } else {
+                        scoreBar.innerHTML = `📊 Melhor match: ${percent}% | Mínimo: ${GLOBAL_THRESHOLD*100}%`;
+                        scoreBar.className = "score-bar medium";
+                    }
+                }
             }
-            currentDescriptor = new Float32Array(descriptor);
-            currentProportions = extractFacialProportions(landmarks);
-            
-            drawFaceMesh(landmarks);
         } else {
-            currentDescriptor = null;
-            currentProportions = null;
+            currentLandmarks = null;
             drawFaceMesh(null);
         }
     }
     
+    // Inicialização
     async function initFaceMesh() {
         try {
-            faceMesh = new FaceMesh({
-                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-            });
-            
-            faceMesh.setOptions({
-                maxNumFaces: 1,
-                refineLandmarks: true,
-                minDetectionConfidence: 0.5,
-                minTrackingConfidence: 0.5
-            });
-            
+            faceMesh = new FaceMesh({ locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}` });
+            faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
             faceMesh.onResults(onFaceMeshResults);
             isModelReady = true;
-            iaStatusSpan.innerHTML = "✅ 3 métodos ativos";
-            statusDiv.innerHTML = "✅ Sistema Multicamada pronto! 99.5% de rigor exigido.";
-        } catch(err) {
-            console.error(err);
-            statusDiv.innerHTML = "❌ Erro ao carregar. Recarregue.";
-        }
+            iaStatusSpan.innerHTML = "✅ Robusto ativo";
+            statusDiv.innerHTML = "✅ Sistema pronto! Verificação por regiões (olhos/nariz/boca/contorno)";
+        } catch(e) { console.error(e); statusDiv.innerHTML = "❌ Erro"; }
     }
     
     async function processVideoFrame() {
         if (!isModelReady || !video.videoWidth || video.readyState < 2) return;
-        try {
-            await faceMesh.send({ image: video });
-        } catch(e) {}
+        try { await faceMesh.send({ image: video }); } catch(e) {}
     }
     
-    function startDetectionLoop() {
-        if (detectionLoop) clearInterval(detectionLoop);
-        detectionLoop = setInterval(() => processVideoFrame(), 80);
-    }
+    function startLoop() { setInterval(() => processVideoFrame(), 80); }
     
     async function initCamera(facingMode) {
         if (currentStream) currentStream.getTracks().forEach(t => t.stop());
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: { exact: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } }
-            });
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } } });
             currentStream = stream;
             video.srcObject = stream;
             await video.play();
             setTimeout(() => resizeCanvas(), 200);
             return true;
-        } catch(err) {
+        } catch(e) {
             try {
                 const fallback = await navigator.mediaDevices.getUserMedia({ video: true });
                 currentStream = fallback;
                 video.srcObject = fallback;
                 await video.play();
                 return true;
-            } catch(e) {
-                statusDiv.innerHTML = `🚫 Erro: ${e.message}`;
-                return false;
-            }
+            } catch(e2) { statusDiv.innerHTML = `🚫 Erro: ${e2.message}`; return false; }
         }
     }
     
     async function switchCamera() {
-        const newMode = currentFacingMode === "user" ? "environment" : "user";
-        currentFacingMode = newMode;
+        currentFacingMode = currentFacingMode === "user" ? "environment" : "user";
         await initCamera(currentFacingMode);
         resizeCanvas();
     }
     
-    function toggleRegisterMode() {
-        operationMode = operationMode === "verify" ? "register" : "verify";
-        btnRegisterMode.style.background = operationMode === "register" ? "#1f6d5c" : "#2a2f4a";
-        btnRegisterMode.innerHTML = operationMode === "register" ? "🔓 Modo Verificação" : "✍️ Modo Cadastro";
-        updateStatusByMode();
-    }
-    
     function clearAllData() {
-        if (confirm("Apagar TODOS os rostos?")) {
+        if (confirm("⚠️ Apagar TODOS os rostos cadastrados?")) {
             registeredUsers = [];
             nextId = 1;
             saveToLocalStorage();
@@ -814,14 +611,12 @@
         loadFromLocalStorage();
         await initFaceMesh();
         await initCamera("user");
-        startDetectionLoop();
-        
+        startLoop();
         btnSwitch.addEventListener('click', switchCamera);
         btnCapture.addEventListener('click', onCapture);
         btnRegisterMode.addEventListener('click', toggleRegisterMode);
         clearAllBtn.addEventListener('click', clearAllData);
-        
-        updateStatusByMode();
+        updateModeUI();
     }
     
     init();
