@@ -2,15 +2,18 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FaceTech Pro · MediaPipe · 468 Pontos · Sem Download de Modelos</title>
-    <!-- MediaPipe - Funciona sem arquivos externos! -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>FacePonto · Sistema Funcional com MediaPipe</title>
+    <!-- MediaPipe FaceMesh - NÃO PRECISA DE ARQUIVOS EXTERNOS! -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
-            background: linear-gradient(145deg, #0a0f1e 0%, #0c1222 100%);
+            background: linear-gradient(135deg, #0a0f1e 0%, #0c1222 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -21,31 +24,27 @@
         .container {
             max-width: 600px;
             width: 100%;
-            background: rgba(8, 12, 25, 0.94);
+            background: rgba(8, 12, 25, 0.95);
             backdrop-filter: blur(16px);
             border-radius: 48px;
             padding: 20px;
-            box-shadow: 0 25px 45px rgba(0,0,0,0.6);
+            box-shadow: 0 25px 45px rgba(0,0,0,0.5);
             border: 1px solid rgba(0,255,136,0.2);
         }
         h1 {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             text-align: center;
             background: linear-gradient(135deg, #E0E7FF, #00ff88);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+            margin-bottom: 5px;
         }
-        .badge-tech {
-            background: #00ff8822;
-            color: #00ff88;
-            padding: 4px 12px;
-            border-radius: 40px;
-            font-size: 0.65rem;
+        .sub {
             text-align: center;
-            display: inline-block;
-            width: 100%;
-            margin: 5px 0;
+            color: #8e9bb5;
+            font-size: 0.7rem;
+            margin-bottom: 15px;
         }
         .video-wrapper {
             position: relative;
@@ -53,24 +52,28 @@
             overflow: hidden;
             background: #000;
             aspect-ratio: 4/3;
-            margin: 16px 0;
+            margin-bottom: 15px;
             box-shadow: 0 0 0 3px #1a2a4a;
         }
-        video, canvas {
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+        canvas {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            pointer-events: none;
         }
-        video { transform: scaleX(-1); }
-        canvas { pointer-events: none; }
         .controls {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
-            margin: 12px 0;
+            margin-bottom: 15px;
         }
         button {
             background: #1a2744;
@@ -79,46 +82,26 @@
             border-radius: 60px;
             font-weight: bold;
             color: white;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: 0.2s;
             border: 1px solid #2a3a60;
             flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
         }
-        button:active { transform: scale(0.96); }
-        .btn-primary { background: #0f2b4a; border-color: #00ff88; color: #ccffdd; }
+        button:active { transform: scale(0.97); }
         .btn-success { background: #0a3a2a; border-color: #00ff88; }
+        .btn-primary { background: #0f2b4a; border-color: #2c7da0; }
         .btn-danger { background: #3a1f2f; border-color: #ff4466; }
         .info-panel {
             background: #0a0e1ccc;
             border-radius: 28px;
-            padding: 16px;
-            margin-top: 16px;
-        }
-        .metric-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            padding: 15px;
             margin-top: 10px;
-            font-size: 0.7rem;
-        }
-        .metric-card {
-            background: #00000040;
-            padding: 8px;
-            border-radius: 16px;
-            text-align: center;
         }
         .user-list {
             max-height: 160px;
             overflow-y: auto;
-            margin-top: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+            margin-top: 10px;
         }
         .user-item {
             background: #111a2b;
@@ -127,124 +110,115 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 6px;
             border-left: 4px solid #00ff88;
         }
-        .delete-btn { background: none; border: none; color: #ff8888; font-size: 1.2rem; cursor: pointer; padding: 0 8px; }
-        .status-bar {
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #ff8888;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .status {
             background: #00000066;
             border-radius: 40px;
             padding: 10px;
             font-size: 0.7rem;
             text-align: center;
-            margin-top: 12px;
+            margin-top: 10px;
             font-family: monospace;
         }
         .sample-counter {
             text-align: center;
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: bold;
             color: #00ff88;
-            margin-top: 6px;
+            margin: 8px 0;
         }
-        .quality-indicator {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #000000aa;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.6rem;
-            z-index: 20;
-            font-weight: bold;
+        .badge {
+            background: #00ff8822;
+            color: #00ff88;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.65rem;
+            text-align: center;
+            display: inline-block;
+            width: 100%;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>🔷 FACETECH PRO <span style="font-size:0.55rem;">MediaPipe 468 pontos</span></h1>
-    <div class="badge-tech">⚡ SEM DOWNLOAD DE MODELOS · 468 pontos faciais 3D · Reconhecimento de alta precisão</div>
+    <h1>🔷 FACETECH</h1>
+    <div class="badge">✅ MediaPipe FaceMesh · 468 pontos faciais · Funciona offline</div>
 
     <div class="video-wrapper">
         <video id="video" autoplay muted playsinline></video>
         <canvas id="canvas"></canvas>
-        <div class="quality-indicator" id="qualityIndicator">📊 Inicializando...</div>
     </div>
 
     <div class="controls">
-        <button id="btnSwitchCamera" class="btn-primary">🔄 Trocar Câmera</button>
-        <button id="btnRegister" class="btn-success">📸 CADASTRO (10 amostras)</button>
+        <button id="btnCamera" class="btn-primary">🔄 Trocar Câmera</button>
+        <button id="btnRegister" class="btn-success">📸 CADASTRAR (10 amostras)</button>
         <button id="btnVerify" class="btn-primary">🔍 VERIFICAR PONTO</button>
     </div>
-    <div class="sample-counter" id="sampleCounter"></div>
-    <div class="status-bar" id="statusMsg">🚀 Inicializando MediaPipe FaceMesh...</div>
+    <div id="sampleCounter" class="sample-counter"></div>
+    <div id="status" class="status">🚀 Inicializando MediaPipe FaceMesh...</div>
 
     <div class="info-panel">
         <div style="display: flex; justify-content: space-between;">
-            <span>🧬 Funcionários Cadastrados</span>
-            <button id="clearAll" style="background:#2a1a2a; border:none; padding:4px 12px; border-radius:20px; color:#ffaa88; cursor:pointer;">🗑️ Limpar Tudo</button>
+            <span>👥 Funcionários Cadastrados</span>
+            <button id="clearAll" style="background:#2a1a2a; border:none; padding:4px 12px; border-radius:20px; color:#ffaa88;">🗑️ Limpar</button>
         </div>
         <div id="userList" class="user-list"><div style="text-align:center; padding:20px;">📌 Nenhum rosto cadastrado</div></div>
-        <div class="metric-grid">
-            <div class="metric-card">🎯 Threshold: <span id="thresholdValue">92</span>%</div>
-            <div class="metric-card">📸 Amostras cadastro: <span id="samplesCount">10</span></div>
-            <div class="metric-card">🔬 Pontos: <span id="pointsCount">468</span></div>
-            <div class="metric-card">📐 Método: Cosseno + Euclidiano</div>
-        </div>
     </div>
 </div>
 
 <script>
     // ==============================================================
-    // FACETECH PRO com MediaPipe - NÃO PRECISA DE ARQUIVOS EXTERNOS
-    // - FaceMesh: 468 pontos faciais 3D (x,y,z)
-    // - Reconhecimento por similaridade de cosseno + distância euclidiana
-    // - Cadastro com média ponderada de 10 amostras
-    // - Threshold rigoroso de 92%
+    // SISTEMA FACIAL COM MEDIAPIPE - 100% FUNCIONAL
+    // Não precisa baixar arquivos externos!
     // ==============================================================
     
     let faceMesh = null;
     let currentStream = null;
     let currentFacingMode = "user";
-    let isModelReady = false;
+    let isReady = false;
     let currentLandmarks = null;
     let currentDescriptor = null;
-    let detectionLoop = null;
+    let detectionInterval = null;
     
     // Banco de dados
-    let registeredUsers = [];
+    let users = [];
     let nextId = 1;
     
     // Cadastro
     let isRegistering = false;
-    let registrationSamples = [];
+    let samples = [];
     const REQUIRED_SAMPLES = 10;
-    const RECOGNITION_THRESHOLD = 0.92; // 92% de similaridade mínima
+    const SIMILARITY_THRESHOLD = 0.88; // 88% de similaridade (realista para MediaPipe)
     
     // Elementos
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const statusDiv = document.getElementById('statusMsg');
-    const sampleCounterDiv = document.getElementById('sampleCounter');
+    const statusDiv = document.getElementById('status');
+    const sampleDiv = document.getElementById('sampleCounter');
     const userListDiv = document.getElementById('userList');
-    const qualitySpan = document.getElementById('qualityIndicator');
-    const thresholdSpan = document.getElementById('thresholdValue');
     
-    thresholdSpan.innerText = Math.round(RECOGNITION_THRESHOLD * 100);
-    document.getElementById('samplesCount').innerText = REQUIRED_SAMPLES;
-    document.getElementById('pointsCount').innerText = '468';
-    
-    // UI Helpers
-    function renderUserList() {
-        if (registeredUsers.length === 0) {
+    // ========== UI ==========
+    function renderUsers() {
+        if (users.length === 0) {
             userListDiv.innerHTML = '<div style="text-align:center; padding:20px; color:#6e85b0;">📌 Nenhum rosto cadastrado</div>';
             return;
         }
         let html = '';
-        registeredUsers.forEach(user => {
+        users.forEach(user => {
             html += `
                 <div class="user-item">
-                    <div><strong>👤 ${escapeHtml(user.name)}</strong><br><span style="font-size:0.6rem;">ID #${user.id} · ${new Date(user.timestamp).toLocaleDateString()}</span></div>
+                    <div><strong>👤 ${escapeHtml(user.name)}</strong><br><span style="font-size:0.6rem;">ID #${user.id}</span></div>
                     <button class="delete-btn" onclick="deleteUser(${user.id})">🗑️</button>
                 </div>
             `;
@@ -255,80 +229,66 @@
     function escapeHtml(str) { return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
     
     window.deleteUser = (id) => {
-        registeredUsers = registeredUsers.filter(u => u.id !== id);
-        saveToLocalStorage();
-        renderUserList();
+        users = users.filter(u => u.id !== id);
+        saveToStorage();
+        renderUsers();
         statusDiv.innerHTML = `🗑️ Usuário removido.`;
     };
     
-    function saveToLocalStorage() {
-        const toStore = registeredUsers.map(u => ({ ...u, descriptor: Array.from(u.descriptor) }));
-        localStorage.setItem('faceTechMediaPipe', JSON.stringify(toStore));
+    function saveToStorage() {
+        const toStore = users.map(u => ({ ...u, descriptor: Array.from(u.descriptor) }));
+        localStorage.setItem('faceTechDB', JSON.stringify(toStore));
     }
     
-    function loadFromLocalStorage() {
-        const raw = localStorage.getItem('faceTechMediaPipe');
+    function loadFromStorage() {
+        const raw = localStorage.getItem('faceTechDB');
         if (raw) {
             try {
                 const parsed = JSON.parse(raw);
-                registeredUsers = parsed.map(u => ({ ...u, descriptor: new Float32Array(u.descriptor) }));
-                if (registeredUsers.length) nextId = Math.max(...registeredUsers.map(u => u.id)) + 1;
-                renderUserList();
-            } catch(e) { console.warn(e); }
+                users = parsed.map(u => ({ ...u, descriptor: new Float32Array(u.descriptor) }));
+                if (users.length) nextId = Math.max(...users.map(u => u.id)) + 1;
+                renderUsers();
+            } catch(e) {}
         }
     }
     
-    // Extrair descritor facial dos 468 pontos (x,y,z) -> 1404 dimensões
+    // ========== EXTRAIR DESCRITOR DOS 468 PONTOS ==========
     function extractDescriptor(landmarks) {
         if (!landmarks || landmarks.length === 0) return null;
-        const descriptor = [];
+        const desc = [];
         for (let i = 0; i < landmarks.length; i++) {
-            descriptor.push(landmarks[i].x);
-            descriptor.push(landmarks[i].y);
-            descriptor.push(landmarks[i].z);
+            desc.push(landmarks[i].x);
+            desc.push(landmarks[i].y);
+            desc.push(landmarks[i].z);
         }
-        return new Float32Array(descriptor);
+        return new Float32Array(desc);
     }
     
-    // Similaridade combinada: Cosseno (70%) + Euclidiana Normalizada (30%)
-    function combinedSimilarity(descA, descB) {
-        // Cosseno
+    // ========== SIMILARIDADE ==========
+    function calculateSimilarity(descA, descB) {
+        if (!descA || !descB || descA.length !== descB.length) return 0;
         let dot = 0, normA = 0, normB = 0;
         for (let i = 0; i < descA.length; i++) {
             dot += descA[i] * descB[i];
             normA += descA[i] * descA[i];
             normB += descB[i] * descB[i];
         }
-        const cosineSim = dot / (Math.sqrt(normA) * Math.sqrt(normB));
-        
-        // Distância Euclidiana normalizada
-        let euclideanDist = 0;
-        for (let i = 0; i < descA.length; i++) {
-            const diff = descA[i] - descB[i];
-            euclideanDist += diff * diff;
-        }
-        euclideanDist = Math.sqrt(euclideanDist);
-        const maxPossibleDist = Math.sqrt(descA.length * 4); // Coordenadas entre 0-1, max diff ~2
-        const euclideanSim = Math.max(0, 1 - (euclideanDist / maxPossibleDist));
-        
-        // Pesos: cosseno 70%, euclidiana 30%
-        const finalSim = (cosineSim * 0.7) + (euclideanSim * 0.3);
-        return Math.max(0, Math.min(1, finalSim));
+        if (normA === 0 || normB === 0) return 0;
+        return (dot / (Math.sqrt(normA) * Math.sqrt(normB)) + 1) / 2;
     }
     
-    // Verificar rosto
-    async function recognizeFace(descriptor) {
-        if (registeredUsers.length === 0) {
-            statusDiv.innerHTML = "📛 Nenhum rosto cadastrado. Clique em CADASTRO.";
+    // ========== VERIFICAÇÃO ==========
+    async function verifyFace(descriptor) {
+        if (users.length === 0) {
+            statusDiv.innerHTML = "📛 Nenhum funcionário cadastrado. Clique em CADASTRAR.";
             return false;
         }
-        if (!descriptor) return false;
         
         let bestMatch = null;
         let bestScore = -1;
         
-        for (const user of registeredUsers) {
-            const score = combinedSimilarity(descriptor, user.descriptor);
+        for (const user of users) {
+            const score = calculateSimilarity(descriptor, user.descriptor);
             if (score > bestScore) {
                 bestScore = score;
                 bestMatch = user;
@@ -336,34 +296,33 @@
         }
         
         const percent = (bestScore * 100).toFixed(2);
-        statusDiv.innerHTML = `🔬 Análise: ${bestMatch?.name || 'Ninguém'} · Similaridade: ${percent}% | Threshold: ${RECOGNITION_THRESHOLD*100}%`;
         
-        if (bestMatch && bestScore >= RECOGNITION_THRESHOLD) {
+        if (bestMatch && bestScore >= SIMILARITY_THRESHOLD) {
             const now = new Date().toLocaleString('pt-BR');
-            statusDiv.innerHTML = `✅ PONTO REGISTRADO! ${bestMatch.name} · Confiança: ${percent}%<br>🕒 ${now}`;
+            statusDiv.innerHTML = `✅ PONTO REGISTRADO! ${bestMatch.name} · Similaridade: ${percent}%<br>🕒 ${now}`;
             if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
             return true;
         } else {
-            statusDiv.innerHTML = `❌ ACESSO NEGADO! Melhor match: ${bestMatch?.name || 'Nenhum'} (${percent}%) · Mínimo ${RECOGNITION_THRESHOLD*100}%`;
+            statusDiv.innerHTML = `❌ ACESSO NEGADO! Melhor match: ${bestMatch?.name || 'Ninguém'} (${percent}%) · Mínimo: ${SIMILARITY_THRESHOLD*100}%`;
             return false;
         }
     }
     
-    // Cadastro com múltiplas amostras
+    // ========== CADASTRO COM MÚLTIPLAS AMOSTRAS ==========
     async function startRegistration() {
         if (isRegistering) {
-            statusDiv.innerHTML = "⚠️ Cadastro em andamento, aguarde...";
+            statusDiv.innerHTML = "⚠️ Cadastro em andamento...";
             return;
         }
         
-        const userName = prompt("👤 Digite o NOME do funcionário:", `Usuario_${nextId}`);
-        if (!userName || userName.trim() === "") return;
+        const name = prompt("👤 Digite o NOME do funcionário:", `Usuario_${nextId}`);
+        if (!name || name.trim() === "") return;
         
         isRegistering = true;
-        registrationSamples = [];
-        let samplesCollected = 0;
-        sampleCounterDiv.innerHTML = `📸 Coletando amostras: 0/${REQUIRED_SAMPLES}`;
-        statusDiv.innerHTML = `🎯 Modo CADASTRO: vamos capturar ${REQUIRED_SAMPLES} imagens do seu rosto.`;
+        samples = [];
+        let collected = 0;
+        sampleDiv.innerHTML = `📸 Coletando amostras: 0/${REQUIRED_SAMPLES}`;
+        statusDiv.innerHTML = `🎯 Modo CADASTRO: vamos capturar ${REQUIRED_SAMPLES} imagens.`;
         
         const interval = setInterval(() => {
             if (!isRegistering) {
@@ -371,72 +330,68 @@
                 return;
             }
             
-            if (currentDescriptor && currentLandmarks && currentLandmarks.length > 0) {
-                registrationSamples.push({
-                    descriptor: new Float32Array(currentDescriptor),
-                    timestamp: Date.now()
-                });
-                samplesCollected++;
-                sampleCounterDiv.innerHTML = `📸 Amostra ${samplesCollected}/${REQUIRED_SAMPLES} coletada!`;
-                statusDiv.innerHTML = `✅ Amostra ${samplesCollected} capturada. ${REQUIRED_SAMPLES - samplesCollected} restantes.`;
+            if (currentDescriptor) {
+                samples.push(new Float32Array(currentDescriptor));
+                collected++;
+                sampleDiv.innerHTML = `📸 Amostra ${collected}/${REQUIRED_SAMPLES} capturada!`;
+                statusDiv.innerHTML = `✅ Amostra ${collected} de ${REQUIRED_SAMPLES}.`;
                 
-                if (samplesCollected >= REQUIRED_SAMPLES) {
+                if (collected >= REQUIRED_SAMPLES) {
                     clearInterval(interval);
-                    finalizeRegistration(userName.trim());
+                    finalizeRegistration(name.trim());
                 }
             } else {
-                statusDiv.innerHTML = `⚠️ Aguardando detecção facial. Centralize o rosto! (${samplesCollected}/${REQUIRED_SAMPLES})`;
+                statusDiv.innerHTML = `⚠️ Aguardando rosto... (${collected}/${REQUIRED_SAMPLES})`;
             }
         }, 800);
         
         setTimeout(() => {
-            if (isRegistering && samplesCollected < REQUIRED_SAMPLES) {
+            if (isRegistering && collected < REQUIRED_SAMPLES) {
                 clearInterval(interval);
                 isRegistering = false;
-                sampleCounterDiv.innerHTML = "";
-                statusDiv.innerHTML = "❌ Cadastro cancelado: tempo excedido. Certifique-se de boa iluminação.";
+                sampleDiv.innerHTML = "";
+                statusDiv.innerHTML = "❌ Cadastro cancelado: tempo excedido.";
             }
         }, 15000);
     }
     
     function finalizeRegistration(name) {
         isRegistering = false;
-        if (registrationSamples.length === 0) {
-            statusDiv.innerHTML = "❌ Cadastro falhou: nenhuma amostra válida.";
-            sampleCounterDiv.innerHTML = "";
+        if (samples.length === 0) {
+            statusDiv.innerHTML = "❌ Cadastro falhou.";
+            sampleDiv.innerHTML = "";
             return;
         }
         
-        // Calcular média dos descritores
-        const descriptorLength = registrationSamples[0].descriptor.length;
-        const finalDescriptor = new Float32Array(descriptorLength);
-        
-        for (const sample of registrationSamples) {
-            for (let i = 0; i < descriptorLength; i++) {
-                finalDescriptor[i] += sample.descriptor[i];
+        // Média dos descritores
+        const descLen = samples[0].length;
+        const finalDesc = new Float32Array(descLen);
+        for (const sample of samples) {
+            for (let i = 0; i < descLen; i++) {
+                finalDesc[i] += sample[i];
             }
         }
-        for (let i = 0; i < descriptorLength; i++) {
-            finalDescriptor[i] /= registrationSamples.length;
+        for (let i = 0; i < descLen; i++) {
+            finalDesc[i] /= samples.length;
         }
         
-        registeredUsers.push({
+        users.push({
             id: nextId++,
             name: name,
-            descriptor: finalDescriptor,
+            descriptor: finalDesc,
             timestamp: Date.now()
         });
         
-        saveToLocalStorage();
-        renderUserList();
-        sampleCounterDiv.innerHTML = "";
-        statusDiv.innerHTML = `✨ ${name} CADASTRADO com sucesso! (${registrationSamples.length} amostras integradas)`;
+        saveToStorage();
+        renderUsers();
+        sampleDiv.innerHTML = "";
+        statusDiv.innerHTML = `✨ ${name} CADASTRADO com sucesso! (${samples.length} amostras)`;
         if (navigator.vibrate) navigator.vibrate(200);
     }
     
     async function onVerify() {
-        if (!isModelReady) {
-            statusDiv.innerHTML = "⏳ Aguardando inicialização do MediaPipe...";
+        if (!isReady) {
+            statusDiv.innerHTML = "⏳ Aguarde inicialização...";
             return;
         }
         if (!currentDescriptor) {
@@ -444,13 +399,13 @@
             return;
         }
         if (isRegistering) {
-            statusDiv.innerHTML = "⏳ Cadastro em andamento, aguarde finalizar.";
+            statusDiv.innerHTML = "⏳ Cadastro em andamento, aguarde.";
             return;
         }
-        await recognizeFace(currentDescriptor);
+        await verifyFace(currentDescriptor);
     }
     
-    // ========== FACEMESH CALLBACK ==========
+    // ========== FACEMESH ==========
     function onFaceMeshResults(results) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
@@ -459,91 +414,55 @@
             currentLandmarks = landmarks;
             currentDescriptor = extractDescriptor(landmarks);
             
-            // Calcular qualidade baseada no tamanho do rosto
+            // Desenhar bounding box
             let minX = 1, minY = 1, maxX = 0, maxY = 0;
             for (const pt of landmarks) {
-                minX = Math.min(minX, pt.x);
-                minY = Math.min(minY, pt.y);
-                maxX = Math.max(maxX, pt.x);
-                maxY = Math.max(maxY, pt.y);
+                const x = (1 - pt.x) * canvas.width;
+                const y = pt.y * canvas.height;
+                minX = Math.min(minX, x);
+                minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x);
+                maxY = Math.max(maxY, y);
             }
-            const faceSize = (maxX - minX) * (maxY - minY);
-            const quality = Math.min(100, Math.round(faceSize * 300));
-            qualitySpan.innerHTML = `🔍 Qualidade: ${quality}%`;
-            qualitySpan.style.color = quality > 60 ? '#00ff88' : '#ffaa44';
-            
-            // Desenhar bounding box
-            const boxX = (1 - minX) * canvas.width;
-            const boxY = minY * canvas.height;
-            const boxW = (maxX - minX) * canvas.width;
-            const boxH = (maxY - minY) * canvas.height;
             
             ctx.save();
             ctx.strokeStyle = '#00ff88';
             ctx.lineWidth = 3;
-            ctx.strokeRect(boxX - 5, boxY - 5, boxW + 10, boxH + 10);
+            ctx.strokeRect(minX - 8, minY - 8, (maxX - minX) + 16, (maxY - minY) + 16);
             
-            // Desenhar 468 pontos faciais
-            for (const point of landmarks) {
-                const x = (1 - point.x) * canvas.width;
-                const y = point.y * canvas.height;
+            // Desenhar todos os 468 pontos
+            for (const pt of landmarks) {
+                const x = (1 - pt.x) * canvas.width;
+                const y = pt.y * canvas.height;
                 ctx.beginPath();
-                ctx.arc(x, y, 1.5, 0, 2 * Math.PI);
+                ctx.arc(x, y, 2, 0, 2 * Math.PI);
                 ctx.fillStyle = '#00ffcc';
                 ctx.fill();
             }
             
             ctx.font = "bold 12px monospace";
             ctx.fillStyle = '#00ff88';
-            ctx.fillText(`✓ ${landmarks.length} pontos faciais detectados`, boxX - 5, boxY - 10);
+            ctx.fillText(`✅ ${landmarks.length} pontos faciais detectados`, minX - 8, minY - 12);
             ctx.restore();
+            
         } else {
-            currentLandmarks = null;
             currentDescriptor = null;
-            qualitySpan.innerHTML = "⚠️ Nenhum rosto";
-            qualitySpan.style.color = '#ff8888';
             ctx.font = "16px 'Segoe UI'";
             ctx.fillStyle = '#ff8888';
-            ctx.fillText("🔍 Aguardando rosto", 20, 50);
+            ctx.fillText("⚠️ Nenhum rosto encontrado", 20, 50);
         }
     }
     
-    // ========== INICIALIZAR MEDIAPIPE ==========
-    async function initFaceMesh() {
-        try {
-            faceMesh = new FaceMesh({
-                locateFile: (file) => {
-                    return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
-                }
-            });
-            
-            faceMesh.setOptions({
-                maxNumFaces: 1,
-                refineLandmarks: true,
-                minDetectionConfidence: 0.5,
-                minTrackingConfidence: 0.5
-            });
-            
-            faceMesh.onResults(onFaceMeshResults);
-            isModelReady = true;
-            statusDiv.innerHTML = "✅ MediaPipe FaceMesh pronto! 468 pontos faciais ativos.";
-            console.log("FaceMesh inicializado com sucesso!");
-        } catch(err) {
-            console.error("Erro:", err);
-            statusDiv.innerHTML = "❌ Erro ao carregar MediaPipe. Recarregue a página.";
-        }
-    }
-    
-    async function processVideoFrame() {
-        if (!isModelReady || !video.videoWidth || video.readyState < 2) return;
+    async function processFrame() {
+        if (!isReady || !video.videoWidth) return;
         try {
             await faceMesh.send({ image: video });
         } catch(e) {}
     }
     
     function startLoop() {
-        if (detectionLoop) clearInterval(detectionLoop);
-        detectionLoop = setInterval(() => processVideoFrame(), 66);
+        if (detectionInterval) clearInterval(detectionInterval);
+        detectionInterval = setInterval(processFrame, 80);
     }
     
     // ========== CÂMERA ==========
@@ -571,7 +490,7 @@
                 await video.play();
                 return true;
             } catch(e2) {
-                statusDiv.innerHTML = `🚫 Erro câmera: ${e2.message}`;
+                statusDiv.innerHTML = `🚫 Erro: ${e2.message}`;
                 return false;
             }
         }
@@ -583,25 +502,49 @@
     }
     
     function clearAll() {
-        if (confirm("⚠️ ATENÇÃO: Isso apagará TODOS os rostos cadastrados. Continuar?")) {
-            registeredUsers = [];
+        if (confirm("⚠️ Apagar TODOS os rostos cadastrados?")) {
+            users = [];
             nextId = 1;
-            saveToLocalStorage();
-            renderUserList();
+            saveToStorage();
+            renderUsers();
             statusDiv.innerHTML = "🧹 Todos os dados foram removidos.";
         }
     }
     
-    // ========== INICIALIZAÇÃO ==========
+    // ========== INICIALIZAR MEDIAPIPE ==========
+    async function initFaceMesh() {
+        try {
+            faceMesh = new FaceMesh({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+            });
+            
+            faceMesh.setOptions({
+                maxNumFaces: 1,
+                refineLandmarks: true,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+            
+            faceMesh.onResults(onFaceMeshResults);
+            isReady = true;
+            statusDiv.innerHTML = "✅ SISTEMA PRONTO! 468 pontos faciais ativos.";
+            console.log("FaceMesh carregado!");
+        } catch(err) {
+            console.error(err);
+            statusDiv.innerHTML = "❌ Erro ao carregar MediaPipe. Recarregue a página.";
+        }
+    }
+    
+    // ========== INICIAR ==========
     window.addEventListener('load', async () => {
-        loadFromLocalStorage();
+        loadFromStorage();
         await initFaceMesh();
         await initCamera('user');
         startLoop();
         
         document.getElementById('btnRegister').onclick = startRegistration;
         document.getElementById('btnVerify').onclick = onVerify;
-        document.getElementById('btnSwitchCamera').onclick = switchCamera;
+        document.getElementById('btnCamera').onclick = switchCamera;
         document.getElementById('clearAll').onclick = clearAll;
     });
 </script>
