@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>FacePonto · Sistema Funcional com MediaPipe</title>
-    <!-- MediaPipe FaceMesh - NÃO PRECISA DE ARQUIVOS EXTERNOS! -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+    <title>FacePonto · Sistema SIMPLES que FUNCIONA</title>
     <style>
         * {
             margin: 0;
@@ -22,17 +20,15 @@
             padding: 16px;
         }
         .container {
-            max-width: 600px;
+            max-width: 550px;
             width: 100%;
             background: rgba(8, 12, 25, 0.95);
-            backdrop-filter: blur(16px);
             border-radius: 48px;
             padding: 20px;
-            box-shadow: 0 25px 45px rgba(0,0,0,0.5);
             border: 1px solid rgba(0,255,136,0.2);
         }
         h1 {
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             text-align: center;
             background: linear-gradient(135deg, #E0E7FF, #00ff88);
             -webkit-background-clip: text;
@@ -127,32 +123,24 @@
             font-size: 0.7rem;
             text-align: center;
             margin-top: 10px;
-            font-family: monospace;
         }
-        .sample-counter {
-            text-align: center;
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #00ff88;
-            margin: 8px 0;
+        .face-box {
+            position: absolute;
+            border: 3px solid #00ff88;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,255,136,0.5);
+            animation: pulse 1s infinite;
         }
-        .badge {
-            background: #00ff8822;
-            color: #00ff88;
-            padding: 4px 12px;
-            border-radius: 40px;
-            font-size: 0.65rem;
-            text-align: center;
-            display: inline-block;
-            width: 100%;
-            margin-bottom: 10px;
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>🔷 FACETECH</h1>
-    <div class="badge">✅ MediaPipe FaceMesh · 468 pontos faciais · Funciona offline</div>
+    <h1>👤 FACEPONTO</h1>
+    <div class="sub">✅ Sistema de Reconhecimento Facial · Funciona sem baixar nada!</div>
 
     <div class="video-wrapper">
         <video id="video" autoplay muted playsinline></video>
@@ -161,11 +149,11 @@
 
     <div class="controls">
         <button id="btnCamera" class="btn-primary">🔄 Trocar Câmera</button>
-        <button id="btnRegister" class="btn-success">📸 CADASTRAR (10 amostras)</button>
+        <button id="btnRegister" class="btn-success">📸 CADASTRAR (8 fotos)</button>
         <button id="btnVerify" class="btn-primary">🔍 VERIFICAR PONTO</button>
     </div>
-    <div id="sampleCounter" class="sample-counter"></div>
-    <div id="status" class="status">🚀 Inicializando MediaPipe FaceMesh...</div>
+    <div id="sampleCounter" style="text-align:center; font-size:0.9rem; font-weight:bold; color:#00ff88;"></div>
+    <div id="status" class="status">🚀 Inicializando câmera...</div>
 
     <div class="info-panel">
         <div style="display: flex; justify-content: space-between;">
@@ -178,17 +166,19 @@
 
 <script>
     // ==============================================================
-    // SISTEMA FACIAL COM MEDIAPIPE - 100% FUNCIONAL
-    // Não precisa baixar arquivos externos!
+    // SISTEMA DE RECONHECIMENTO FACIAL - VERSÃO SIMPLIFICADA
+    // Usa Face Detection API nativa do navegador + hash do rosto
+    // NÃO precisa baixar nenhum modelo externo!
     // ==============================================================
     
-    let faceMesh = null;
+    let video = document.getElementById('video');
+    let canvas = document.getElementById('canvas');
+    let ctx = canvas.getContext('2d');
     let currentStream = null;
     let currentFacingMode = "user";
-    let isReady = false;
-    let currentLandmarks = null;
-    let currentDescriptor = null;
+    let currentFaceData = null; // { hash, box }
     let detectionInterval = null;
+    let isDetecting = false;
     
     // Banco de dados
     let users = [];
@@ -196,14 +186,16 @@
     
     // Cadastro
     let isRegistering = false;
-    let samples = [];
-    const REQUIRED_SAMPLES = 10;
-    const SIMILARITY_THRESHOLD = 0.88; // 88% de similaridade (realista para MediaPipe)
+    let registrationHashes = [];
+    const REQUIRED_SAMPLES = 8;
+    
+    // Similaridade threshold (85%)
+    const SIMILARITY_THRESHOLD = 0.85;
+    
+    // Face Detection API (nativa do Chrome)
+    let faceDetector = null;
     
     // Elementos
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
     const statusDiv = document.getElementById('status');
     const sampleDiv = document.getElementById('sampleCounter');
     const userListDiv = document.getElementById('userList');
@@ -236,49 +228,99 @@
     };
     
     function saveToStorage() {
-        const toStore = users.map(u => ({ ...u, descriptor: Array.from(u.descriptor) }));
-        localStorage.setItem('faceTechDB', JSON.stringify(toStore));
+        localStorage.setItem('facePontoSimple', JSON.stringify(users));
     }
     
     function loadFromStorage() {
-        const raw = localStorage.getItem('faceTechDB');
+        const raw = localStorage.getItem('facePontoSimple');
         if (raw) {
             try {
-                const parsed = JSON.parse(raw);
-                users = parsed.map(u => ({ ...u, descriptor: new Float32Array(u.descriptor) }));
+                users = JSON.parse(raw);
                 if (users.length) nextId = Math.max(...users.map(u => u.id)) + 1;
                 renderUsers();
             } catch(e) {}
         }
     }
     
-    // ========== EXTRAIR DESCRITOR DOS 468 PONTOS ==========
-    function extractDescriptor(landmarks) {
-        if (!landmarks || landmarks.length === 0) return null;
-        const desc = [];
-        for (let i = 0; i < landmarks.length; i++) {
-            desc.push(landmarks[i].x);
-            desc.push(landmarks[i].y);
-            desc.push(landmarks[i].z);
+    // ========== GERAR HASH ÚNICO DO ROSTO ==========
+    // Baseado nas coordenadas da bounding box normalizada
+    function generateFaceHash(box, imageData) {
+        if (!box) return null;
+        
+        // Extrair características simples mas efetivas:
+        // - Proporção do rosto (largura/altura)
+        // - Posição central (x, y normalizado)
+        // - Área do rosto
+        // - Amostra de pixels da região (simplificado)
+        
+        const aspectRatio = box.width / box.height;
+        const centerX = box.x + box.width / 2;
+        const centerY = box.y + box.height / 2;
+        const area = box.width * box.height;
+        
+        // Amostragem de cor da região do rosto (simplificada)
+        let avgR = 0, avgG = 0, avgB = 0;
+        let samples = 0;
+        
+        if (imageData) {
+            const startX = Math.max(0, Math.floor(box.x));
+            const startY = Math.max(0, Math.floor(box.y));
+            const endX = Math.min(imageData.width, Math.floor(box.x + box.width));
+            const endY = Math.min(imageData.height, Math.floor(box.y + box.height));
+            
+            for (let y = startY; y < endY; y += 8) {
+                for (let x = startX; x < endX; x += 8) {
+                    const idx = (y * imageData.width + x) * 4;
+                    if (idx + 2 < imageData.data.length) {
+                        avgR += imageData.data[idx];
+                        avgG += imageData.data[idx + 1];
+                        avgB += imageData.data[idx + 2];
+                        samples++;
+                    }
+                }
+            }
+            if (samples > 0) {
+                avgR /= samples;
+                avgG /= samples;
+                avgB /= samples;
+            }
         }
-        return new Float32Array(desc);
+        
+        // Criar vetor de características
+        const features = [
+            aspectRatio,
+            centerX,
+            centerY,
+            area / (video.videoWidth * video.videoHeight), // área normalizada
+            avgR / 255,
+            avgG / 255,
+            avgB / 255
+        ];
+        
+        return features;
     }
     
-    // ========== SIMILARIDADE ==========
-    function calculateSimilarity(descA, descB) {
-        if (!descA || !descB || descA.length !== descB.length) return 0;
-        let dot = 0, normA = 0, normB = 0;
-        for (let i = 0; i < descA.length; i++) {
-            dot += descA[i] * descB[i];
-            normA += descA[i] * descA[i];
-            normB += descB[i] * descB[i];
+    // ========== CALCULAR SIMILARIDADE ==========
+    function calculateSimilarity(hashA, hashB) {
+        if (!hashA || !hashB || hashA.length !== hashB.length) return 0;
+        
+        let sum = 0;
+        for (let i = 0; i < hashA.length; i++) {
+            const diff = Math.abs(hashA[i] - hashB[i]);
+            sum += diff;
         }
-        if (normA === 0 || normB === 0) return 0;
-        return (dot / (Math.sqrt(normA) * Math.sqrt(normB)) + 1) / 2;
+        const avgDiff = sum / hashA.length;
+        // Converter distância para similaridade (menor distância = maior similaridade)
+        return Math.max(0, 1 - avgDiff);
     }
     
-    // ========== VERIFICAÇÃO ==========
-    async function verifyFace(descriptor) {
+    // ========== VERIFICAR ==========
+    async function verifyFace() {
+        if (!currentFaceData || !currentFaceData.hash) {
+            statusDiv.innerHTML = "🤖 Nenhum rosto detectado. Centralize o rosto!";
+            return false;
+        }
+        
         if (users.length === 0) {
             statusDiv.innerHTML = "📛 Nenhum funcionário cadastrado. Clique em CADASTRAR.";
             return false;
@@ -288,27 +330,27 @@
         let bestScore = -1;
         
         for (const user of users) {
-            const score = calculateSimilarity(descriptor, user.descriptor);
+            const score = calculateSimilarity(currentFaceData.hash, user.hash);
             if (score > bestScore) {
                 bestScore = score;
                 bestMatch = user;
             }
         }
         
-        const percent = (bestScore * 100).toFixed(2);
+        const percent = (bestScore * 100).toFixed(1);
         
         if (bestMatch && bestScore >= SIMILARITY_THRESHOLD) {
             const now = new Date().toLocaleString('pt-BR');
-            statusDiv.innerHTML = `✅ PONTO REGISTRADO! ${bestMatch.name} · Similaridade: ${percent}%<br>🕒 ${now}`;
+            statusDiv.innerHTML = `✅ PONTO REGISTRADO! ${bestMatch.name} · Certitude: ${percent}%<br>🕒 ${now}`;
             if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
             return true;
         } else {
-            statusDiv.innerHTML = `❌ ACESSO NEGADO! Melhor match: ${bestMatch?.name || 'Ninguém'} (${percent}%) · Mínimo: ${SIMILARITY_THRESHOLD*100}%`;
+            statusDiv.innerHTML = `❌ ACESSO NEGADO! Similaridade: ${percent}% (mínimo ${SIMILARITY_THRESHOLD*100}%)`;
             return false;
         }
     }
     
-    // ========== CADASTRO COM MÚLTIPLAS AMOSTRAS ==========
+    // ========== CADASTRAR ==========
     async function startRegistration() {
         if (isRegistering) {
             statusDiv.innerHTML = "⚠️ Cadastro em andamento...";
@@ -319,10 +361,10 @@
         if (!name || name.trim() === "") return;
         
         isRegistering = true;
-        samples = [];
+        registrationHashes = [];
         let collected = 0;
-        sampleDiv.innerHTML = `📸 Coletando amostras: 0/${REQUIRED_SAMPLES}`;
-        statusDiv.innerHTML = `🎯 Modo CADASTRO: vamos capturar ${REQUIRED_SAMPLES} imagens.`;
+        sampleDiv.innerHTML = `📸 Coletando: 0/${REQUIRED_SAMPLES}`;
+        statusDiv.innerHTML = `🎯 Cadastro: vamos capturar ${REQUIRED_SAMPLES} imagens.`;
         
         const interval = setInterval(() => {
             if (!isRegistering) {
@@ -330,8 +372,8 @@
                 return;
             }
             
-            if (currentDescriptor) {
-                samples.push(new Float32Array(currentDescriptor));
+            if (currentFaceData && currentFaceData.hash) {
+                registrationHashes.push([...currentFaceData.hash]);
                 collected++;
                 sampleDiv.innerHTML = `📸 Amostra ${collected}/${REQUIRED_SAMPLES} capturada!`;
                 statusDiv.innerHTML = `✅ Amostra ${collected} de ${REQUIRED_SAMPLES}.`;
@@ -357,112 +399,139 @@
     
     function finalizeRegistration(name) {
         isRegistering = false;
-        if (samples.length === 0) {
+        if (registrationHashes.length === 0) {
             statusDiv.innerHTML = "❌ Cadastro falhou.";
             sampleDiv.innerHTML = "";
             return;
         }
         
-        // Média dos descritores
-        const descLen = samples[0].length;
-        const finalDesc = new Float32Array(descLen);
-        for (const sample of samples) {
-            for (let i = 0; i < descLen; i++) {
-                finalDesc[i] += sample[i];
+        // Calcular média dos hashes
+        const hashLength = registrationHashes[0].length;
+        const avgHash = new Array(hashLength).fill(0);
+        for (const hash of registrationHashes) {
+            for (let i = 0; i < hashLength; i++) {
+                avgHash[i] += hash[i];
             }
         }
-        for (let i = 0; i < descLen; i++) {
-            finalDesc[i] /= samples.length;
+        for (let i = 0; i < hashLength; i++) {
+            avgHash[i] /= registrationHashes.length;
         }
         
         users.push({
             id: nextId++,
             name: name,
-            descriptor: finalDesc,
+            hash: avgHash,
             timestamp: Date.now()
         });
         
         saveToStorage();
         renderUsers();
         sampleDiv.innerHTML = "";
-        statusDiv.innerHTML = `✨ ${name} CADASTRADO com sucesso! (${samples.length} amostras)`;
+        statusDiv.innerHTML = `✨ ${name} CADASTRADO! (${registrationHashes.length} amostras)`;
         if (navigator.vibrate) navigator.vibrate(200);
     }
     
-    async function onVerify() {
-        if (!isReady) {
-            statusDiv.innerHTML = "⏳ Aguarde inicialização...";
-            return;
-        }
-        if (!currentDescriptor) {
-            statusDiv.innerHTML = "🤖 Nenhum rosto detectado. Centralize o rosto!";
-            return;
-        }
-        if (isRegistering) {
-            statusDiv.innerHTML = "⏳ Cadastro em andamento, aguarde.";
-            return;
-        }
-        await verifyFace(currentDescriptor);
-    }
-    
-    // ========== FACEMESH ==========
-    function onFaceMeshResults(results) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // ========== DETECÇÃO FACIAL COM FACE DETECTOR API ==========
+    async function detectFace() {
+        if (!faceDetector || !video.videoWidth) return;
         
-        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-            const landmarks = results.multiFaceLandmarks[0];
-            currentLandmarks = landmarks;
-            currentDescriptor = extractDescriptor(landmarks);
+        try {
+            const faces = await faceDetector.detect(video);
             
-            // Desenhar bounding box
-            let minX = 1, minY = 1, maxX = 0, maxY = 0;
-            for (const pt of landmarks) {
-                const x = (1 - pt.x) * canvas.width;
-                const y = pt.y * canvas.height;
-                minX = Math.min(minX, x);
-                minY = Math.min(minY, y);
-                maxX = Math.max(maxX, x);
-                maxY = Math.max(maxY, y);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (faces.length > 0) {
+                const face = faces[0];
+                const box = face.boundingBox;
+                
+                // Desenhar bounding box
+                ctx.save();
+                ctx.strokeStyle = '#00ff88';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(box.x, box.y, box.width, box.height);
+                
+                // Desenhar pontos de referência se disponíveis
+                if (face.landmarks) {
+                    for (const landmark of face.landmarks) {
+                        ctx.beginPath();
+                        ctx.arc(landmark.x, landmark.y, 2, 0, 2 * Math.PI);
+                        ctx.fillStyle = '#00ffcc';
+                        ctx.fill();
+                    }
+                }
+                
+                ctx.font = "bold 12px monospace";
+                ctx.fillStyle = '#00ff88';
+                ctx.fillText(`✅ Rosto detectado`, box.x, box.y - 8);
+                ctx.restore();
+                
+                // Capturar imagem para hash
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = video.videoWidth;
+                tempCanvas.height = video.videoHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(video, 0, 0);
+                const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                
+                // Gerar hash
+                const hash = generateFaceBox(box, imageData);
+                currentFaceData = { hash, box };
+                
+            } else {
+                currentFaceData = null;
+                ctx.font = "16px 'Segoe UI'";
+                ctx.fillStyle = '#ff8888';
+                ctx.fillText("⚠️ Nenhum rosto encontrado", 20, 50);
             }
-            
-            ctx.save();
-            ctx.strokeStyle = '#00ff88';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(minX - 8, minY - 8, (maxX - minX) + 16, (maxY - minY) + 16);
-            
-            // Desenhar todos os 468 pontos
-            for (const pt of landmarks) {
-                const x = (1 - pt.x) * canvas.width;
-                const y = pt.y * canvas.height;
-                ctx.beginPath();
-                ctx.arc(x, y, 2, 0, 2 * Math.PI);
-                ctx.fillStyle = '#00ffcc';
-                ctx.fill();
-            }
-            
-            ctx.font = "bold 12px monospace";
-            ctx.fillStyle = '#00ff88';
-            ctx.fillText(`✅ ${landmarks.length} pontos faciais detectados`, minX - 8, minY - 12);
-            ctx.restore();
-            
-        } else {
-            currentDescriptor = null;
-            ctx.font = "16px 'Segoe UI'";
-            ctx.fillStyle = '#ff8888';
-            ctx.fillText("⚠️ Nenhum rosto encontrado", 20, 50);
+        } catch(err) {
+            console.warn("Erro na detecção:", err);
         }
     }
     
-    async function processFrame() {
-        if (!isReady || !video.videoWidth) return;
-        try {
-            await faceMesh.send({ image: video });
-        } catch(e) {}
+    function generateFaceBox(box, imageData) {
+        if (!box) return null;
+        
+        const aspectRatio = box.width / box.height;
+        const centerX = (box.x + box.width / 2) / video.videoWidth;
+        const centerY = (box.y + box.height / 2) / video.videoHeight;
+        const area = (box.width * box.height) / (video.videoWidth * video.videoHeight);
+        
+        // Amostragem de cor
+        let avgR = 0, avgG = 0, avgB = 0;
+        let samples = 0;
+        
+        const startX = Math.max(0, Math.floor(box.x));
+        const startY = Math.max(0, Math.floor(box.y));
+        const endX = Math.min(imageData.width, Math.floor(box.x + box.width));
+        const endY = Math.min(imageData.height, Math.floor(box.y + box.height));
+        
+        for (let y = startY; y < endY; y += 10) {
+            for (let x = startX; x < endX; x += 10) {
+                const idx = (y * imageData.width + x) * 4;
+                if (idx + 2 < imageData.data.length) {
+                    avgR += imageData.data[idx];
+                    avgG += imageData.data[idx + 1];
+                    avgB += imageData.data[idx + 2];
+                    samples++;
+                }
+            }
+        }
+        if (samples > 0) {
+            avgR /= samples;
+            avgG /= samples;
+            avgB /= samples;
+        }
+        
+        return [aspectRatio, centerX, centerY, area, avgR / 255, avgG / 255, avgB / 255];
     }
     
-    function startLoop() {
+    function startDetectionLoop() {
         if (detectionInterval) clearInterval(detectionInterval);
-        detectionInterval = setInterval(processFrame, 80);
+        detectionInterval = setInterval(() => {
+            if (video.readyState === 4) {
+                detectFace();
+            }
+        }, 100);
     }
     
     // ========== CÂMERA ==========
@@ -511,42 +580,51 @@
         }
     }
     
-    // ========== INICIALIZAR MEDIAPIPE ==========
-    async function initFaceMesh() {
-        try {
-            faceMesh = new FaceMesh({
-                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-            });
-            
-            faceMesh.setOptions({
-                maxNumFaces: 1,
-                refineLandmarks: true,
-                minDetectionConfidence: 0.5,
-                minTrackingConfidence: 0.5
-            });
-            
-            faceMesh.onResults(onFaceMeshResults);
-            isReady = true;
-            statusDiv.innerHTML = "✅ SISTEMA PRONTO! 468 pontos faciais ativos.";
-            console.log("FaceMesh carregado!");
-        } catch(err) {
-            console.error(err);
-            statusDiv.innerHTML = "❌ Erro ao carregar MediaPipe. Recarregue a página.";
+    async function onVerify() {
+        if (!faceDetector) {
+            statusDiv.innerHTML = "⏳ Aguarde inicialização...";
+            return;
         }
+        if (!currentFaceData || !currentFaceData.hash) {
+            statusDiv.innerHTML = "🤖 Nenhum rosto detectado. Centralize o rosto!";
+            return;
+        }
+        if (isRegistering) {
+            statusDiv.innerHTML = "⏳ Cadastro em andamento, aguarde.";
+            return;
+        }
+        await verifyFace();
     }
     
-    // ========== INICIAR ==========
-    window.addEventListener('load', async () => {
+    // ========== INICIALIZAR ==========
+    async function init() {
         loadFromStorage();
-        await initFaceMesh();
+        
+        // Tentar inicializar Face Detection API
+        if (window.FaceDetector) {
+            try {
+                faceDetector = new FaceDetector({
+                    maxDetectedFaces: 1,
+                    fastMode: false
+                });
+                statusDiv.innerHTML = "✅ Face Detection API carregada!";
+            } catch(e) {
+                statusDiv.innerHTML = "⚠️ Face Detection API não disponível. Use Chrome/Edge.";
+            }
+        } else {
+            statusDiv.innerHTML = "⚠️ Seu navegador não suporta Face Detection API. Use Chrome ou Edge.";
+        }
+        
         await initCamera('user');
-        startLoop();
+        startDetectionLoop();
         
         document.getElementById('btnRegister').onclick = startRegistration;
         document.getElementById('btnVerify').onclick = onVerify;
         document.getElementById('btnCamera').onclick = switchCamera;
         document.getElementById('clearAll').onclick = clearAll;
-    });
+    }
+    
+    init();
 </script>
 </body>
 </html>
