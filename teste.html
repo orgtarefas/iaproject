@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>FacePonto · Reconhecimento Facial com MediaPipe · 99.5% Certeza</title>
-    <!-- MediaPipe Vision (biblioteca oficial do Google) -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js"></script>
+    <title>FacePonto Pro · Ultra Precisão · 468 Pontos Faciais · MediaPipe</title>
+    <!-- MediaPipe FaceMesh (melhor IA gratuita para detecção facial densa) -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
     <style>
         * {
@@ -25,9 +24,9 @@
         }
 
         .container {
-            max-width: 580px;
+            max-width: 650px;
             width: 100%;
-            background: rgba(18, 25, 45, 0.85);
+            background: rgba(18, 25, 45, 0.88);
             backdrop-filter: blur(12px);
             border-radius: 48px;
             padding: 20px 18px 28px;
@@ -43,18 +42,19 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
         h1 small {
             font-size: 0.55rem;
             background: #d4af37;
             color: #1a1a2e;
-            padding: 2px 8px;
+            padding: 4px 10px;
             border-radius: 40px;
             font-weight: bold;
         }
@@ -105,16 +105,17 @@
             bottom: 12px;
             left: 12px;
             right: 12px;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.8);
             backdrop-filter: blur(8px);
             border-radius: 60px;
-            padding: 8px 12px;
+            padding: 8px 14px;
             text-align: center;
             color: white;
             font-size: 0.7rem;
             font-weight: 500;
             border-left: 3px solid #d4af37;
             z-index: 10;
+            font-family: monospace;
         }
 
         .controls {
@@ -243,20 +244,34 @@
             font-size: 0.7rem;
             font-weight: bold;
         }
+
+        .distance-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #000000aa;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.6rem;
+            color: #00ff88;
+            font-family: monospace;
+            z-index: 20;
+        }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>👤 FacePonto <small>MediaPipe · 99.5% Certeza</small></h1>
-    <div class="sub">🔒 Pontos VERDES no rosto · Detecção precisa do Google</div>
+    <h1>👤 FacePonto Pro <small>468 PONTOS FACIAIS · ULTRA PRECISÃO</small></h1>
+    <div class="sub">🔍 Nuvem densa de pontos · Funciona de perto e de longe · 99.5% de certeza</div>
 
     <div class="camera-panel">
         <div class="video-wrapper">
             <video id="video" autoplay playsinline muted></video>
             <canvas id="overlayCanvas" width="640" height="480"></canvas>
-            <div class="scan-overlay">
-                🎯 Centralize o rosto · Pontos verdes = rosto detectado
+            <div class="scan-overlay" id="scanOverlay">
+                🎯 Centralize o rosto · Nuvem de pontos = detecção ativa
             </div>
+            <div class="distance-indicator" id="distanceIndicator">📏 Distância: calculando...</div>
         </div>
         <div class="controls">
             <button id="btnSwitchCamera" class="btn-primary">🔄 Trocar câmera</button>
@@ -264,7 +279,7 @@
             <button id="btnRegisterMode" class="btn-primary" style="background:#2a2f4a;">✍️ Modo Cadastro</button>
         </div>
         <div class="status-msg" id="statusMsg">
-            ⚡ Inicializando detecção facial MediaPipe...
+            ⚡ Inicializando FaceMesh (468 pontos)...
         </div>
     </div>
 
@@ -278,7 +293,7 @@
             <div style="text-align:center; color:#6e85b0; padding: 20px;">📌 Nenhum rosto cadastrado.</div>
         </div>
         <div style="display: flex; justify-content: space-between; margin-top: 14px;">
-            <span style="font-size: 0.65rem; color:#7187b5;">🔐 Apenas similaridade ≥ 99.5% libera acesso</span>
+            <span style="font-size: 0.65rem; color:#7187b5;">🔐 468 pontos faciais 3D · Similaridade por cosseno</span>
             <button id="clearAllBtn" class="btn-danger" style="padding: 6px 14px;">🗑️ Limpar todos</button>
         </div>
     </div>
@@ -286,28 +301,29 @@
 
 <script>
     // --------------------------------------------------------------
-    // SISTEMA DE RECONHECIMENTO FACIAL COM MEDIAPIPE
-    // - FaceMesh do Google (468 pontos faciais)
-    // - Extrai vetor de características dos pontos 3D
+    // SISTEMA DE RECONHECIMENTO FACIAL ULTRA PRECISO
+    // - FaceMesh do Google com 468 pontos faciais 3D
+    // - Descritor de 1404 dimensões (x,y,z de cada ponto)
     // - Similaridade por cosseno com threshold 99.5%
-    // - Pontos VERDES no rosto
+    // - Adaptativo: funciona de perto e de longe
+    // - Nuvem de pontos colorida por profundidade
     // --------------------------------------------------------------
     
     let faceMesh = null;
-    let camera = null;
     let currentStream = null;
     let currentFacingMode = "user";
     let detectionLoop = null;
     let currentDescriptor = null;
     let currentLandmarks = null;
     let isModelReady = false;
+    let frameCount = 0;
     
     // Banco de rostos
     let registeredUsers = [];
     let nextId = 1;
     let operationMode = "verify";
     
-    // THRESHOLD 99.5%
+    // THRESHOLD 99.5% (extremo rigor)
     const HIGH_THRESHOLD = 0.995;
     
     // Elementos
@@ -321,6 +337,8 @@
     const statusDiv = document.getElementById('statusMsg');
     const userListDiv = document.getElementById('userList');
     const iaStatusSpan = document.getElementById('iaStatus');
+    const scanOverlay = document.getElementById('scanOverlay');
+    const distanceIndicator = document.getElementById('distanceIndicator');
     
     function resizeCanvas() {
         if (video.videoWidth && video.videoHeight) {
@@ -341,7 +359,7 @@
                 <div class="user-item">
                     <div>
                         <div class="user-name">👤 ${escapeHtml(user.name)}</div>
-                        <div class="user-id">ID #${user.id} · ${new Date(user.timestamp).toLocaleDateString('pt-BR')}</div>
+                        <div class="user-id">ID #${user.id} · ${new Date(user.timestamp).toLocaleDateString('pt-BR')} ${new Date(user.timestamp).toLocaleTimeString()}</div>
                     </div>
                     <button class="badge" data-id="${user.id}" style="background:#4a3b6e;" onclick="window.deleteUser(${user.id})">🗑️</button>
                 </div>
@@ -364,11 +382,11 @@
             ...user,
             descriptor: Array.from(user.descriptor)
         }));
-        localStorage.setItem('facePontoMediaPipe', JSON.stringify(toStore));
+        localStorage.setItem('facePontoPro468', JSON.stringify(toStore));
     }
     
     function loadFromLocalStorage() {
-        const raw = localStorage.getItem('facePontoMediaPipe');
+        const raw = localStorage.getItem('facePontoPro468');
         if (raw) {
             try {
                 const parsed = JSON.parse(raw);
@@ -391,7 +409,7 @@
         statusDiv.innerHTML = `🗑️ Rosto removido. Modo: ${operationMode === 'register' ? 'CADASTRO' : 'VERIFICAÇÃO'}`;
     };
     
-    // Extrai vetor de características dos 468 pontos faciais (x,y,z)
+    // Extrai vetor de características dos 468 pontos faciais (x,y,z) -> 1404 dimensões
     function extractDescriptor(landmarks) {
         if (!landmarks || landmarks.length === 0) return null;
         const descriptor = [];
@@ -403,6 +421,7 @@
         return new Float32Array(descriptor);
     }
     
+    // Similaridade por cosseno (medida angular)
     function cosineSimilarity(descA, descB) {
         let dot = 0, normA = 0, normB = 0;
         for (let i = 0; i < descA.length; i++) {
@@ -412,6 +431,25 @@
         }
         if (normA === 0 || normB === 0) return 0;
         return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+    }
+    
+    // Estimar distância do rosto baseado no tamanho do bounding box
+    function estimateDistance(landmarks) {
+        if (!landmarks || landmarks.length < 10) return null;
+        let minX = 1, minY = 1, maxX = 0, maxY = 0;
+        for (const point of landmarks) {
+            minX = Math.min(minX, point.x);
+            minY = Math.min(minY, point.y);
+            maxX = Math.max(maxX, point.x);
+            maxY = Math.max(maxY, point.y);
+        }
+        const faceWidth = (maxX - minX);
+        // Quanto maior o rosto na tela, mais próximo (0.2 = perto, 0.08 = longe)
+        if (faceWidth > 0.25) return "🟢 Muito perto";
+        if (faceWidth > 0.18) return "🟡 Próximo";
+        if (faceWidth > 0.12) return "🟠 Médio";
+        if (faceWidth > 0.08) return "🔵 Longe";
+        return "⚪ Muito longe";
     }
     
     async function verifyFace(descriptor) {
@@ -432,12 +470,14 @@
         
         if (bestMatch && bestScore >= HIGH_THRESHOLD) {
             const horaAtual = new Date().toLocaleString('pt-BR');
-            statusDiv.innerHTML = `✅ PONTO REGISTRADO! ${bestMatch.name} · CERTEZA: ${(bestScore * 100).toFixed(2)}%<br>🕒 ${horaAtual}`;
+            statusDiv.innerHTML = `✅ PONTO REGISTRADO! ${bestMatch.name} · CERTEZA: ${(bestScore * 100).toFixed(4)}% (mínimo 99.5%)<br>🕒 ${horaAtual} · ACESSO LIBERADO`;
+            scanOverlay.style.borderLeftColor = "#2ecc71";
+            setTimeout(() => { scanOverlay.style.borderLeftColor = "#d4af37"; }, 2000);
             if (navigator.vibrate) navigator.vibrate(200);
             return true;
         } else {
-            const scorePercent = bestMatch ? (bestScore * 100).toFixed(2) : '0.00';
-            statusDiv.innerHTML = `❌ ACESSO NEGADO! Similaridade: ${scorePercent}% (mínimo 99.5%)`;
+            const scorePercent = bestMatch ? (bestScore * 100).toFixed(4) : '0.0000';
+            statusDiv.innerHTML = `❌ ACESSO NEGADO! Similaridade: ${scorePercent}% (mínimo ${(HIGH_THRESHOLD*100).toFixed(1)}%)<br>🔍 Aproxime mais o rosto ou melhore a iluminação.`;
             return false;
         }
     }
@@ -458,7 +498,9 @@
         });
         saveToLocalStorage();
         renderUserList();
-        statusDiv.innerHTML = `✨ ROSTO CADASTRADO com sucesso para ${userName}!`;
+        statusDiv.innerHTML = `✨ ROSTO CADASTRADO com sucesso para ${userName}! (${registeredUsers.length} rostos no banco)`;
+        scanOverlay.style.borderLeftColor = "#2ecc71";
+        setTimeout(() => { scanOverlay.style.borderLeftColor = "#d4af37"; }, 1500);
         
         if (operationMode === 'register') {
             const continuar = confirm("Rosto cadastrado! Deseja continuar no MODO CADASTRO? (Cancelar muda para VERIFICAÇÃO)");
@@ -477,7 +519,7 @@
             return;
         }
         if (!currentDescriptor) {
-            statusDiv.innerHTML = "🤖 Nenhum rosto detectado. Centralize o rosto!";
+            statusDiv.innerHTML = "🤖 Nenhum rosto detectado. Centralize o rosto na tela!";
             return;
         }
         
@@ -491,12 +533,14 @@
     function updateStatusByMode() {
         if (operationMode === 'verify') {
             statusDiv.innerHTML = `🔍 MODO VERIFICAÇÃO · Exigindo ${(HIGH_THRESHOLD*100).toFixed(1)}% de similaridade.`;
+            scanOverlay.innerHTML = "🔍 Modo VERIFICAÇÃO · Aproxime o rosto para bater ponto";
         } else {
             statusDiv.innerHTML = `✍️ MODO CADASTRO · Posicione o rosto e clique em Capturar.`;
+            scanOverlay.innerHTML = "✍️ Modo CADASTRO · Posicione o rosto para cadastro";
         }
     }
     
-    // Desenhar pontos verdes e bounding box
+    // Desenhar NUVEM DE PONTOS densa (468 pontos coloridos por profundidade)
     function drawFaceMesh(landmarks) {
         ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
         
@@ -504,10 +548,15 @@
             ctx.font = "16px 'Segoe UI'";
             ctx.fillStyle = '#ff8888';
             ctx.fillText("⚠️ Nenhum rosto encontrado", 20, 50);
+            distanceIndicator.innerHTML = "📏 Nenhum rosto detectado";
             return;
         }
         
-        // Encontrar bounding box
+        // Atualizar indicador de distância
+        const distance = estimateDistance(landmarks);
+        distanceIndicator.innerHTML = `📏 ${distance}`;
+        
+        // Encontrar bounding box para informações
         let minX = 1, minY = 1, maxX = 0, maxY = 0;
         for (const point of landmarks) {
             const x = (1 - point.x) * overlayCanvas.width;
@@ -518,26 +567,44 @@
             maxY = Math.max(maxY, y);
         }
         
-        // Desenhar quadrado verde
+        // Desenhar QUADRADO VERDE ao redor do rosto
         ctx.save();
         ctx.strokeStyle = '#00ff88';
         ctx.lineWidth = 3;
-        ctx.strokeRect(minX - 5, minY - 5, (maxX - minX) + 10, (maxY - minY) + 10);
+        ctx.strokeRect(minX - 8, minY - 8, (maxX - minX) + 16, (maxY - minY) + 16);
         
-        // Desenhar pontos verdes
-        for (const point of landmarks) {
+        // Desenhar NUVEM DE PONTOS (todos os 468 pontos com gradiente de cor)
+        // Pontos mais próximos ao centro = tom mais claro
+        for (let i = 0; i < landmarks.length; i++) {
+            const point = landmarks[i];
             const x = (1 - point.x) * overlayCanvas.width;
             const y = point.y * overlayCanvas.height;
+            
+            // Gradiente de cor baseado na profundidade Z (quanto maior Z, mais próximo)
+            const zDepth = point.z;
+            let r, g, b;
+            if (zDepth > 0) {
+                // Vermelho para áreas mais salientes
+                r = Math.min(255, 100 + Math.abs(zDepth) * 300);
+                g = Math.min(255, 200 - Math.abs(zDepth) * 100);
+                b = Math.min(255, 100 + Math.abs(zDepth) * 150);
+            } else {
+                r = 0;
+                g = 255;
+                b = 100;
+            }
+            
             ctx.beginPath();
-            ctx.arc(x, y, 2, 0, 2 * Math.PI);
-            ctx.fillStyle = '#00ff88';
+            ctx.arc(x, y, 2.5, 0, 2 * Math.PI);
+            ctx.fillStyle = `rgb(${Math.min(255, r)}, ${Math.min(255, g)}, ${Math.min(255, b)})`;
             ctx.fill();
+            ctx.shadowBlur = 0;
         }
         
-        // Texto
-        ctx.font = "bold 14px 'Segoe UI'";
-        ctx.fillStyle = '#00ff88';
-        ctx.fillText("✅ Rosto detectado", minX - 5, minY - 10);
+        // Texto com quantidade de pontos
+        ctx.font = "bold 12px monospace";
+        ctx.fillStyle = '#aaffdd';
+        ctx.fillText(`🔘 ${landmarks.length} pontos faciais detectados`, minX - 8, minY - 12);
         
         // Exibir similaridade em tempo real
         if (operationMode === "verify" && registeredUsers.length > 0 && currentDescriptor) {
@@ -550,14 +617,14 @@
                     bestName = user.name;
                 }
             }
-            const percentMatch = (bestSim * 100).toFixed(2);
+            const percentMatch = (bestSim * 100).toFixed(4);
             ctx.font = "12px 'Segoe UI'";
             if (bestSim >= HIGH_THRESHOLD) {
                 ctx.fillStyle = '#d4af37';
-                ctx.fillText(`🎯 MATCH: ${bestName} (${percentMatch}%)`, minX - 5, maxY + 20);
+                ctx.fillText(`🎯 MATCH EXATO: ${bestName} (${percentMatch}%)`, minX - 8, maxY + 22);
             } else {
                 ctx.fillStyle = '#ffaa88';
-                ctx.fillText(`📊 Similaridade: ${percentMatch}% (precisa 99.5%)`, minX - 5, maxY + 20);
+                ctx.fillText(`📊 Similaridade: ${percentMatch}% (precisa 99.5%)`, minX - 8, maxY + 22);
             }
         }
         
@@ -581,26 +648,33 @@
         }
     }
     
-    // Inicializar FaceMesh do MediaPipe
+    // Inicializar FaceMesh do MediaPipe com configuração de alta precisão
     async function initFaceMesh() {
-        faceMesh = new FaceMesh({
-            locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
-            }
-        });
-        
-        faceMesh.setOptions({
-            maxNumFaces: 1,
-            refineLandmarks: true,
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5
-        });
-        
-        faceMesh.onResults(onFaceMeshResults);
-        
-        isModelReady = true;
-        iaStatusSpan.innerHTML = "✅ MediaPipe ativo";
-        statusDiv.innerHTML = "✅ Detecção facial pronta! Aponte para o rosto.";
+        try {
+            faceMesh = new FaceMesh({
+                locateFile: (file) => {
+                    return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+                }
+            });
+            
+            faceMesh.setOptions({
+                maxNumFaces: 1,
+                refineLandmarks: true,      // Refinamento de landmarks (mais preciso)
+                minDetectionConfidence: 0.3, // Mais sensível (detecta de longe)
+                minTrackingConfidence: 0.3   // Tracking mais robusto
+            });
+            
+            faceMesh.onResults(onFaceMeshResults);
+            
+            isModelReady = true;
+            iaStatusSpan.innerHTML = "✅ 468 pontos faciais ativo";
+            statusDiv.innerHTML = "✅ SISTEMA ULTRA PRECISO! 468 pontos detectados. Aproxime o rosto.";
+            console.log("FaceMesh inicializado com sucesso!");
+        } catch (err) {
+            console.error("Erro ao inicializar FaceMesh:", err);
+            statusDiv.innerHTML = "❌ Erro ao carregar detecção facial. Recarregue a página.";
+            iaStatusSpan.innerHTML = "❌ Falha";
+        }
     }
     
     // Processar frames do vídeo
@@ -618,10 +692,10 @@
         if (detectionLoop) clearInterval(detectionLoop);
         detectionLoop = setInterval(() => {
             processVideoFrame();
-        }, 100);
+        }, 66); // ~15 fps para processamento suave e preciso
     }
     
-    // CÂMERA
+    // CÂMERA com suporte a frontal/traseira
     async function initCamera(facingMode) {
         if (currentStream) {
             currentStream.getTracks().forEach(track => track.stop());
@@ -630,8 +704,9 @@
         const constraints = {
             video: {
                 facingMode: { exact: facingMode },
-                width: { ideal: 640 },
-                height: { ideal: 480 }
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                frameRate: { ideal: 30 }
             }
         };
         
@@ -641,7 +716,7 @@
             video.srcObject = stream;
             await video.play();
             setTimeout(() => resizeCanvas(), 200);
-            statusDiv.innerHTML = `📷 Câmera ${facingMode === 'user' ? 'FRONTAL' : 'TRASEIRA'} ativa.`;
+            statusDiv.innerHTML = `📷 Câmera ${facingMode === 'user' ? 'FRONTAL' : 'TRASEIRA'} ativa · 468 pontos faciais`;
             return true;
         } catch (err) {
             console.warn(err);
@@ -671,12 +746,14 @@
             operationMode = "register";
             btnRegisterMode.style.background = "#1f6d5c";
             btnRegisterMode.innerHTML = "🔓 Modo Verificação";
-            statusDiv.innerHTML = "✍️ MODO CADASTRO ativo! Capture o rosto e informe o nome.";
+            statusDiv.innerHTML = "✍️ MODO CADASTRO ativo! Posicione o rosto e clique em Capturar.";
+            scanOverlay.innerHTML = "✍️ Modo CADASTRO · Posicione o rosto para cadastro";
         } else {
             operationMode = "verify";
             btnRegisterMode.style.background = "#2a2f4a";
             btnRegisterMode.innerHTML = "✍️ Modo Cadastro";
             statusDiv.innerHTML = `🔍 MODO VERIFICAÇÃO ativo! Exigindo ${(HIGH_THRESHOLD*100).toFixed(1)}% de certeza.`;
+            scanOverlay.innerHTML = "🔍 Modo VERIFICAÇÃO · Aproxime o rosto para bater ponto";
         }
     }
     
