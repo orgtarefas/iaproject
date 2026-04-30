@@ -3,37 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>BioIDENT · Leitor Biométrico por Câmera</title>
-    <!-- TensorFlow.js e MobileNet para extrair features e gerar "impressão digital" única -->
+    <title>FacePonto · Reconhecimento Facial com IA</title>
+    <!-- TensorFlow.js e FaceMesh para detecção facial e extração de características -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
     <style>
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
-            user-select: none;
         }
 
         body {
             font-family: 'Segoe UI', 'Roboto', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
-            background: linear-gradient(145deg, #0a0f1e 0%, #0c1222 100%);
+            background: linear-gradient(135deg, #0a0f1e 0%, #0c1222 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 16px;
-            margin: 0;
         }
 
         .container {
             max-width: 560px;
             width: 100%;
-            background: rgba(18, 25, 45, 0.75);
+            background: rgba(18, 25, 45, 0.8);
             backdrop-filter: blur(12px);
             border-radius: 48px;
             padding: 20px 18px 28px;
             box-shadow: 0 25px 45px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(66, 153, 225, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.2s;
         }
 
         h1 {
@@ -44,7 +43,6 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            letter-spacing: -0.3px;
             margin-bottom: 8px;
             display: flex;
             align-items: center;
@@ -53,29 +51,27 @@
         }
 
         h1 small {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             background: #1e2a4e;
             color: #7dd3fc;
             padding: 2px 8px;
             border-radius: 40px;
-            font-weight: normal;
         }
 
         .sub {
             text-align: center;
             color: #8e9bb5;
-            font-size: 0.8rem;
-            margin-bottom: 20px;
+            font-size: 0.75rem;
+            margin-bottom: 18px;
+            padding-bottom: 6px;
             border-bottom: 1px dashed #2d3a5e;
-            padding-bottom: 8px;
         }
 
         .camera-panel {
             background: #00000030;
-            border-radius: 36px;
+            border-radius: 32px;
             padding: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            margin-bottom: 18px;
         }
 
         .video-wrapper {
@@ -84,31 +80,40 @@
             overflow: hidden;
             background: #000;
             aspect-ratio: 4 / 3;
-            box-shadow: 0 0 0 3px #2d3f66, inset 0 0 0 2px #6c8dff30;
+            box-shadow: 0 0 0 3px #2d3f66;
         }
 
         video {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(1);
+            transform: scaleX(-1);
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
         }
 
         .scan-overlay {
             position: absolute;
-            bottom: 16px;
-            left: 16px;
-            right: 16px;
-            background: rgba(0, 0, 0, 0.65);
+            bottom: 12px;
+            left: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.7);
             backdrop-filter: blur(8px);
             border-radius: 60px;
-            padding: 8px 16px;
+            padding: 6px 12px;
             text-align: center;
             color: white;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 500;
-            letter-spacing: 1px;
             border-left: 3px solid #38bdf8;
+            z-index: 10;
         }
 
         .controls {
@@ -122,7 +127,7 @@
         button {
             background: #1f2a48;
             border: none;
-            padding: 10px 20px;
+            padding: 10px 18px;
             border-radius: 60px;
             font-weight: 600;
             font-size: 0.85rem;
@@ -144,7 +149,6 @@
         .btn-primary {
             background: #0f3b5e;
             border-color: #2c7da0;
-            box-shadow: 0 0 8px #2c7da070;
         }
 
         .btn-capture {
@@ -161,51 +165,46 @@
         .info-card {
             background: #0f1422cc;
             border-radius: 32px;
-            padding: 16px 18px;
-            margin-top: 20px;
-            backdrop-filter: blur(4px);
-            border: 1px solid #2f4168;
+            padding: 16px;
+            margin-top: 18px;
         }
 
         .section-title {
             font-size: 0.9rem;
             font-weight: 600;
             color: #9bb5e6;
-            letter-spacing: 1px;
             margin-bottom: 12px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .fingerprint-list {
-            max-height: 210px;
+        .user-list {
+            max-height: 200px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
 
-        .fp-item {
+        .user-item {
             background: #111a2be0;
-            border-radius: 24px;
-            padding: 12px 14px;
+            border-radius: 20px;
+            padding: 10px 14px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-left: 4px solid #38bdf8;
-            transition: 0.1s;
         }
 
-        .fp-name {
+        .user-name {
             font-weight: 700;
             color: #d9e6ff;
         }
 
-        .fp-id {
+        .user-id {
             font-size: 0.7rem;
             color: #6c86b0;
-            font-family: monospace;
         }
 
         .badge {
@@ -214,6 +213,7 @@
             padding: 4px 12px;
             font-size: 0.7rem;
             font-weight: bold;
+            cursor: pointer;
         }
 
         .status-msg {
@@ -229,51 +229,56 @@
         .ia-badge {
             background: linear-gradient(90deg, #1e2b4e, #263a60);
             border-radius: 20px;
-            padding: 5px 12px;
+            padding: 4px 10px;
             font-size: 0.7rem;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
         }
 
-        ::-webkit-scrollbar {
-            width: 4px;
+        .face-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #00ff8844;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            color: white;
+            backdrop-filter: blur(4px);
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>🪪 BioIDENT <small>Ponto + Segurança</small></h1>
-    <div class="sub">📸 Leitura de impressão digital por câmera · IA com TensorFlow.js</div>
+    <h1>👤 FacePonto <small>Reconhecimento Facial com IA</small></h1>
+    <div class="sub">📸 Capture o rosto · IA analisa e identifica · Segurança + Ponto</div>
 
     <div class="camera-panel">
         <div class="video-wrapper">
             <video id="video" autoplay playsinline muted></video>
+            <canvas id="canvas" width="640" height="480"></canvas>
             <div class="scan-overlay">
-                🔍 Posicione a DIGITAL nítida no centro · similar a leitura de QR Code
+                🎯 Centralize o rosto · Olhe para a câmera
             </div>
         </div>
         <div class="controls">
             <button id="btnSwitchCamera" class="btn-primary">🔄 Trocar câmera</button>
-            <button id="btnCapture" class="btn-capture">📸 Capturar Digital / Verificar</button>
+            <button id="btnCapture" class="btn-capture">📸 Capturar / Verificar Rosto</button>
             <button id="btnRegisterMode" class="btn-primary" style="background:#2a2f4a;">✍️ Modo Cadastro</button>
         </div>
         <div class="status-msg" id="statusMsg">
-            ✅ IA carregando... aguarde modelo MobileNet
+            ⚡ Inicializando IA e câmera...
         </div>
     </div>
 
     <div class="info-card">
         <div class="section-title">
-            🧠 IA Biométrica · Banco de Digitais
-            <span class="ia-badge" id="iaStatus">⚡ TensorFlow.js</span>
+            🧠 Banco de Rostos Cadastrados
+            <span class="ia-badge" id="iaStatus">🔍 FaceMesh + IA</span>
         </div>
-        <div id="fingerprintList" class="fingerprint-list">
-            <div style="text-align:center; color:#6e85b0; padding: 20px;">📌 Cadastre digitais clicando em [Modo Cadastro] + Capturar</div>
+        <div id="userList" class="user-list">
+            <div style="text-align:center; color:#6e85b0; padding: 20px;">📌 Nenhum rosto cadastrado. Use [Modo Cadastro] + Capturar.</div>
         </div>
         <div style="display: flex; justify-content: space-between; margin-top: 14px;">
-            <span style="font-size: 0.7rem; color:#7187b5;">🔐 similar a faceID + vetor CNN</span>
+            <span style="font-size: 0.7rem; color:#7187b5;">🔐 Reconhecimento facial com 468 pontos faciais</span>
             <button id="clearAllBtn" class="btn-danger" style="padding: 6px 14px;">🗑️ Limpar tudo</button>
         </div>
     </div>
@@ -281,56 +286,69 @@
 
 <script>
     // --------------------------------------------------------------
-    // SISTEMA DE RECONHECIMENTO DE IMPRESSÃO DIGITAL VIA CÂMERA
-    // Utiliza MobileNet para extrair vetor de características (embedding)
-    // e calcula similaridade por cosseno -> "Leitura biométrica"
-    // Suporte a câmera frontal/traseira (modo dinâmico)
+    // SISTEMA DE RECONHECIMENTO FACIAL COM TENSORFLOW.JS + FACEMESH
+    // Extrai um vetor de características (landmarks normalizados)
+    // Utiliza similaridade por cosseno para identificar rostos
+    // Suporte a câmera frontal/traseira (modo ambiente)
     // --------------------------------------------------------------
-    let net = null;               // modelo MobileNet
-    let currentStream = null;
-    let currentFacingMode = "environment"; // 'user' (frontal) ou 'environment' (traseira)
-    let isModelReady = false;
     
-    // Banco de digitais cadastradas: cada item { id, name, embedding, timestamp }
-    let registeredFingerprints = [];
+    let faceMesh = null;
+    let video = null;
+    let canvas = null;
+    let canvasCtx = null;
+    let currentStream = null;
+    let currentFacingMode = "user"; // user = frontal, environment = traseira
+    let isFaceMeshReady = false;
+    let detectionInterval = null;
+    
+    // Banco de rostos cadastrados: cada item { id, name, faceDescriptor, timestamp }
+    let registeredUsers = [];
     let nextId = 1;
     
-    // Modo de operação: "register" (cadastrar nova digital) ou "verify" (verificar ponto/segurança)
-    let operationMode = "verify";   // verify = batida de ponto/segurança
-    let pendingRegisterName = null;
+    // Modo: "register" (cadastrar novo rosto) ou "verify" (verificar ponto/segurança)
+    let operationMode = "verify";
+    
+    // Último embedding capturado para evitar processamento duplicado
+    let lastFaceDescriptor = null;
     
     // Elementos DOM
-    const video = document.getElementById('video');
+    const videoEl = document.getElementById('video');
+    const canvasEl = document.getElementById('canvas');
     const btnSwitch = document.getElementById('btnSwitchCamera');
     const btnCapture = document.getElementById('btnCapture');
     const btnRegisterMode = document.getElementById('btnRegisterMode');
     const clearAllBtn = document.getElementById('clearAllBtn');
     const statusDiv = document.getElementById('statusMsg');
-    const fingerprintListDiv = document.getElementById('fingerprintList');
+    const userListDiv = document.getElementById('userList');
+    const iaStatusSpan = document.getElementById('iaStatus');
     
-    // Helper: atualizar lista de usuários cadastrados na UI
-    function renderFingerprintList() {
-        if (!fingerprintListDiv) return;
-        if (registeredFingerprints.length === 0) {
-            fingerprintListDiv.innerHTML = `<div style="text-align:center; color:#6e85b0; padding: 20px;">📌 Nenhuma digital cadastrada. Use [Modo Cadastro] + Capturar.</div>`;
+    // Ajustar canvas para espelhar video
+    function setupCanvas() {
+        canvasCtx = canvasEl.getContext('2d');
+    }
+    
+    // Renderizar lista de usuários cadastrados
+    function renderUserList() {
+        if (!userListDiv) return;
+        if (registeredUsers.length === 0) {
+            userListDiv.innerHTML = `<div style="text-align:center; color:#6e85b0; padding: 20px;">📌 Nenhum rosto cadastrado. Use [Modo Cadastro] + Capturar.</div>`;
             return;
         }
         let html = '';
-        registeredFingerprints.forEach(fp => {
+        registeredUsers.forEach(user => {
             html += `
-                <div class="fp-item">
+                <div class="user-item">
                     <div>
-                        <div class="fp-name">👤 ${escapeHtml(fp.name)}</div>
-                        <div class="fp-id">ID #${fp.id} · ${new Date(fp.timestamp).toLocaleTimeString()}</div>
+                        <div class="user-name">👤 ${escapeHtml(user.name)}</div>
+                        <div class="user-id">ID #${user.id} · ${new Date(user.timestamp).toLocaleDateString('pt-BR')}</div>
                     </div>
-                    <button class="badge" data-id="${fp.id}" style="background:#4a3b6e; cursor:pointer;" onclick="window.deleteFingerprint(${fp.id})">🗑️</button>
+                    <button class="badge" data-id="${user.id}" style="background:#4a3b6e;" onclick="window.deleteUser(${user.id})">🗑️</button>
                 </div>
             `;
         });
-        fingerprintListDiv.innerHTML = html;
+        userListDiv.innerHTML = html;
     }
     
-    // escape simples
     function escapeHtml(str) {
         return str.replace(/[&<>]/g, function(m) {
             if (m === '&') return '&amp;';
@@ -340,195 +358,231 @@
         });
     }
     
-    // Salvar no localStorage simulando persistência
+    // Persistência LocalStorage
     function saveToLocalStorage() {
-        const toStore = registeredFingerprints.map(fp => ({
-            ...fp,
-            embedding: Array.from(fp.embedding) // converte tensor-like para array
+        const toStore = registeredUsers.map(user => ({
+            ...user,
+            faceDescriptor: Array.from(user.faceDescriptor)
         }));
-        localStorage.setItem('bioIdentDB', JSON.stringify(toStore));
+        localStorage.setItem('facePontoDB', JSON.stringify(toStore));
     }
     
     function loadFromLocalStorage() {
-        const raw = localStorage.getItem('bioIdentDB');
+        const raw = localStorage.getItem('facePontoDB');
         if (raw) {
             try {
                 const parsed = JSON.parse(raw);
-                registeredFingerprints = parsed.map(fp => ({
-                    ...fp,
-                    embedding: new Float32Array(fp.embedding)
+                registeredUsers = parsed.map(user => ({
+                    ...user,
+                    faceDescriptor: new Float32Array(user.faceDescriptor)
                 }));
-                if (registeredFingerprints.length > 0) {
-                    nextId = Math.max(...registeredFingerprints.map(f => f.id)) + 1;
+                if (registeredUsers.length > 0) {
+                    nextId = Math.max(...registeredUsers.map(u => u.id)) + 1;
                 } else {
                     nextId = 1;
                 }
-                renderFingerprintList();
+                renderUserList();
             } catch(e) { console.warn(e); }
         }
     }
     
-    // Excluir digital globalmente
-    window.deleteFingerprint = function(id) {
-        registeredFingerprints = registeredFingerprints.filter(fp => fp.id !== id);
+    // Excluir usuário globalmente
+    window.deleteUser = function(id) {
+        registeredUsers = registeredUsers.filter(user => user.id !== id);
         saveToLocalStorage();
-        renderFingerprintList();
-        statusDiv.innerHTML = `🗑️ Digital removida. Modo atual: ${operationMode === 'register' ? 'CADASTRO' : 'VERIFICAÇÃO'}`;
+        renderUserList();
+        statusDiv.innerHTML = `🗑️ Rosto removido. Modo atual: ${operationMode === 'register' ? 'CADASTRO' : 'VERIFICAÇÃO'}`;
         setTimeout(() => {
-            if (operationMode === 'verify') statusDiv.innerHTML = `🔍 Modo VERIFICAÇÃO: capture a digital para bater ponto/segurança.`;
-            else statusDiv.innerHTML = `✍️ Modo CADASTRO: capture uma nova digital e informe o nome.`;
-        }, 1800);
+            updateStatusByMode();
+        }, 1500);
     };
     
-    // Função para extrair embedding da imagem do vídeo (frame atual)
-    async function extractFingerprintEmbeddingFromVideo() {
-        if (!net || !isModelReady) {
-            throw new Error("Modelo IA ainda não carregado");
+    function updateStatusByMode() {
+        if (operationMode === 'verify') {
+            statusDiv.innerHTML = `🔍 Modo VERIFICAÇÃO: capture o rosto para bater ponto/segurança.`;
+        } else {
+            statusDiv.innerHTML = `✍️ Modo CADASTRO: Capture o rosto e informe o nome.`;
         }
-        // capturar frame do video
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const videoWidth = video.videoWidth;
-        const videoHeight = video.videoHeight;
-        if (videoWidth === 0 || videoHeight === 0) throw new Error("Câmera sem dimensão");
-        // área centralizada para extrair textura similar a impressão digital
-        const cropSize = Math.min(videoWidth, videoHeight) * 0.7;
-        const startX = (videoWidth - cropSize) / 2;
-        const startY = (videoHeight - cropSize) / 2;
-        canvas.width = 224;
-        canvas.height = 224;
-        ctx.drawImage(video, startX, startY, cropSize, cropSize, 0, 0, 224, 224);
-        
-        // converter para tensor e inferir com MobileNet (sem camada softmax)
-        const imgTensor = tf.browser.fromPixels(canvas).toFloat();
-        const resized = tf.image.resizeBilinear(imgTensor, [224, 224]);
-        const normalized = resized.div(255.0);
-        const expanded = normalized.expandDims(0);
-        // extrai embedding do último pooling (MobileNet sem cabeça de classificação)
-        const embedding = await net.infer(expanded, true); // true = features internas (1024d)
-        const embeddingArray = embedding.dataSync(); // Float32Array
-        // limpeza
-        imgTensor.dispose();
-        resized.dispose();
-        normalized.dispose();
-        expanded.dispose();
-        embedding.dispose();
-        return new Float32Array(embeddingArray);
     }
     
-    // similaridade por cosseno entre dois embeddings
-    function cosineSimilarity(embA, embB) {
+    // Extrair descritor facial a partir dos landmarks do FaceMesh
+    // Normaliza os 468 pontos para um vetor de 1404 dimensões (x,y,z)
+    function extractFaceDescriptor(landmarks) {
+        if (!landmarks || landmarks.length === 0) return null;
+        // usar apenas os 468 pontos (cada um com x,y,z)
+        const descriptor = [];
+        for (let i = 0; i < landmarks.length; i++) {
+            descriptor.push(landmarks[i].x);
+            descriptor.push(landmarks[i].y);
+            descriptor.push(landmarks[i].z);
+        }
+        return new Float32Array(descriptor);
+    }
+    
+    // Similaridade por cosseno entre dois descritores
+    function cosineSimilarity(descA, descB) {
+        if (descA.length !== descB.length) return 0;
         let dot = 0, normA = 0, normB = 0;
-        for (let i = 0; i < embA.length; i++) {
-            dot += embA[i] * embB[i];
-            normA += embA[i] * embA[i];
-            normB += embB[i] * embB[i];
+        for (let i = 0; i < descA.length; i++) {
+            dot += descA[i] * descB[i];
+            normA += descA[i] * descA[i];
+            normB += descB[i] * descB[i];
         }
         if (normA === 0 || normB === 0) return 0;
         return dot / (Math.sqrt(normA) * Math.sqrt(normB));
     }
     
-    // verificar se digital capturada corresponde a algum cadastro
-    async function verifyFingerprint() {
-        if (!isModelReady) {
-            statusDiv.innerHTML = "⚠️ IA ainda inicializando, tente novamente em alguns segundos.";
-            return false;
-        }
-        if (registeredFingerprints.length === 0) {
-            statusDiv.innerHTML = "📛 Nenhuma digital cadastrada. Mude para modo CADASTRO e registre um usuário primeiro.";
-            return false;
-        }
-        statusDiv.innerHTML = "🧬 Analisando impressão digital com IA... aguarde";
-        let queryEmbedding;
-        try {
-            queryEmbedding = await extractFingerprintEmbeddingFromVideo();
-        } catch (err) {
-            statusDiv.innerHTML = `❌ Erro na câmera: ${err.message}`;
+    // Função para reconhecer rosto comparando com banco de dados
+    async function verifyFace(faceDescriptor) {
+        if (registeredUsers.length === 0) {
+            statusDiv.innerHTML = "📛 Nenhum rosto cadastrado. Use MODO CADASTRO primeiro.";
             return false;
         }
         
         let bestMatch = null;
         let bestScore = -1;
-        for (const fp of registeredFingerprints) {
-            const sim = cosineSimilarity(queryEmbedding, fp.embedding);
+        for (const user of registeredUsers) {
+            const sim = cosineSimilarity(faceDescriptor, user.faceDescriptor);
             if (sim > bestScore) {
                 bestScore = sim;
-                bestMatch = fp;
+                bestMatch = user;
             }
         }
-        // threshold de similaridade (ajustado experimentalmente)
-        const THRESHOLD = 0.68;
+        
+        // Threshold para reconhecimento facial (ajustado para boa precisão)
+        const THRESHOLD = 0.85;
         if (bestMatch && bestScore >= THRESHOLD) {
             const horaAtual = new Date().toLocaleString('pt-BR');
-            statusDiv.innerHTML = `✅ PONTO REGISTRADO! Bem-vindo(a) ${bestMatch.name} · Similaridade: ${(bestScore*100).toFixed(1)}%<br>🕒 ${horaAtual} · Acesso liberado.`;
-            // simular som/notificação
+            statusDiv.innerHTML = `✅ PONTO REGISTRADO! Bem-vindo(a) ${bestMatch.name} · Confiança: ${(bestScore * 100).toFixed(1)}%<br>🕒 ${horaAtual} · Acesso liberado.`;
+            // Feedback visual
             return true;
         } else {
-            const scorePercent = bestMatch ? (bestScore*100).toFixed(1) : '0';
-            statusDiv.innerHTML = `❌ ACESSO NEGADO: Digital não reconhecida (similaridade máx ${scorePercent}%).<br>🔐 Verifique iluminação e contraste da digital.`;
+            const scorePercent = bestMatch ? (bestScore * 100).toFixed(1) : '0';
+            statusDiv.innerHTML = `❌ ACESSO NEGADO: Rosto não reconhecido (similaridade ${scorePercent}%).<br>🔍 Verifique iluminação e posicione o rosto corretamente.`;
             return false;
         }
     }
     
-    // Modo cadastro: capturar e salvar nova digital com nome
-    async function registerNewFingerprint() {
-        if (!isModelReady) {
-            statusDiv.innerHTML = "⏳ Modelo IA carregando... aguarde alguns segundos.";
-            return;
-        }
-        let userName = prompt("👤 Digite o NOME do FUNCIONÁRIO para cadastrar a digital:", `Usuário ${nextId}`);
+    // Cadastrar novo rosto
+    async function registerFace(faceDescriptor) {
+        let userName = prompt("👤 Digite o NOME do FUNCIONÁRIO para cadastrar o rosto:", `Usuário ${nextId}`);
         if (!userName || userName.trim() === "") {
             statusDiv.innerHTML = "✖️ Cadastro cancelado: nome não informado.";
             return;
         }
         userName = userName.trim();
-        statusDiv.innerHTML = "📸 Extraindo características biométricas... segure a digital fixa.";
-        let embedding;
-        try {
-            embedding = await extractFingerprintEmbeddingFromVideo();
-        } catch(e) {
-            statusDiv.innerHTML = `Erro na captura: ${e.message}`;
-            return;
-        }
-        registeredFingerprints.push({
+        
+        registeredUsers.push({
             id: nextId++,
             name: userName,
-            embedding: embedding,
+            faceDescriptor: faceDescriptor,
             timestamp: Date.now()
         });
         saveToLocalStorage();
-        renderFingerprintList();
-        statusDiv.innerHTML = `✨ DIGITAL CADASTRADA com sucesso para ${userName}! (${registeredFingerprints.length} registros no total)`;
-        // manter modo em verify automático após cadastro opcional? mas não muda modo para evitar confusão
+        renderUserList();
+        statusDiv.innerHTML = `✨ ROSTO CADASTRADO com sucesso para ${userName}! (${registeredUsers.length} rostos no banco)`;
+        
+        // Opção de continuar cadastrando
         if (operationMode === 'register') {
-            // pergunta se quer continuar cadastrando ou voltar para verificação
-            const continuar = confirm("Digital cadastrada! Deseja continuar no MODO CADASTRO para adicionar outro? Cancelar muda para VERIFICAÇÃO.");
+            const continuar = confirm("Rosto cadastrado! Deseja continuar no MODO CADASTRO? (Cancelar muda para VERIFICAÇÃO)");
             if (!continuar) {
                 operationMode = "verify";
                 btnRegisterMode.style.background = "#2a2f4a";
                 btnRegisterMode.innerHTML = "✍️ Modo Cadastro";
-                statusDiv.innerHTML = "🔍 Agora em MODO VERIFICAÇÃO (batida de ponto/segurança)";
-            } else {
-                statusDiv.innerHTML = "✍️ Modo CADASTRO ativo. Posicione nova digital e clique em Capturar Digital.";
+                updateStatusByMode();
             }
         }
     }
     
-    // Função principal de captura (dispara baseado no modo)
+    // Função principal chamada ao clicar em capturar
     async function onCapture() {
-        if (!isModelReady) {
-            statusDiv.innerHTML = "⌛ IA não inicializada completamente, tente novamente em alguns instantes.";
+        if (!isFaceMeshReady) {
+            statusDiv.innerHTML = "⏳ IA facial ainda carregando, aguarde...";
             return;
         }
-        if (!video.srcObject || !currentStream || video.readyState < 2) {
-            statusDiv.innerHTML = "📷 Aguardando feed da câmera... verifique permissões.";
+        if (!lastFaceDescriptor) {
+            statusDiv.innerHTML = "🤖 Aguarde detectar um rosto válido na tela. Centralize o rosto!";
             return;
         }
+        
         if (operationMode === "register") {
-            await registerNewFingerprint();
+            await registerFace(lastFaceDescriptor);
         } else {
-            await verifyFingerprint();
+            await verifyFace(lastFaceDescriptor);
         }
+    }
+    
+    // Processamento dos frames vindos do FaceMesh
+    function onFaceMeshResults(results) {
+        if (!canvasCtx || !videoEl) return;
+        
+        // Limpar canvas e desenhar espelho do vídeo
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+        canvasCtx.scale(-1, 1);
+        canvasCtx.drawImage(videoEl, -canvasEl.width, 0, canvasEl.width, canvasEl.height);
+        canvasCtx.restore();
+        
+        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+            // Pega o primeiro rosto detectado
+            const landmarks = results.multiFaceLandmarks[0];
+            // Desenhar pontos faciais para debug
+            canvasCtx.fillStyle = '#00ffcc';
+            for (const point of landmarks) {
+                const x = (1 - point.x) * canvasEl.width;
+                const y = point.y * canvasEl.height;
+                canvasCtx.beginPath();
+                canvasCtx.arc(x, y, 1.5, 0, 2 * Math.PI);
+                canvasCtx.fill();
+            }
+            
+            // Extrair descritor facial
+            const descriptor = extractFaceDescriptor(landmarks);
+            if (descriptor) {
+                lastFaceDescriptor = descriptor;
+                // Exibir indicador de rosto detectado
+                canvasCtx.font = "bold 14px 'Segoe UI'";
+                canvasCtx.fillStyle = "#2ecc71";
+                canvasCtx.shadowBlur = 0;
+                canvasCtx.fillText("✅ Rosto detectado", 15, 30);
+            }
+        } else {
+            lastFaceDescriptor = null;
+            canvasCtx.font = "14px 'Segoe UI'";
+            canvasCtx.fillStyle = "#ff8888";
+            canvasCtx.fillText("⚠️ Nenhum rosto encontrado", 15, 30);
+        }
+    }
+    
+    // Inicializar FaceMesh
+    async function initFaceMesh() {
+        faceMesh = new FaceMesh({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+            }
+        });
+        
+        faceMesh.setOptions({
+            maxNumFaces: 1,
+            refineLandmarks: true,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+        
+        faceMesh.onResults(onFaceMeshResults);
+        isFaceMeshReady = true;
+        iaStatusSpan.innerHTML = "✅ FaceMesh ativo + IA";
+        statusDiv.innerHTML = "🧠 IA facial pronta! Posicione o rosto no centro.";
+    }
+    
+    // Loop de detecção contínua (enviar frames para o FaceMesh)
+    function startDetectionLoop() {
+        if (detectionInterval) clearInterval(detectionInterval);
+        detectionInterval = setInterval(async () => {
+            if (videoEl && videoEl.readyState >= 2 && isFaceMeshReady && faceMesh) {
+                await faceMesh.send({ image: videoEl });
+            }
+        }, 100);
     }
     
     // ---------- GERENCIAMENTO DE CÂMARA COM FRONTAL/TRASEIRA ----------
@@ -536,30 +590,39 @@
         if (currentStream) {
             currentStream.getTracks().forEach(track => track.stop());
         }
+        
+        // Para celulares: 'user' = frontal, 'environment' = traseira
         const constraints = {
             video: {
                 facingMode: { exact: facingMode },
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
+                width: { ideal: 640 },
+                height: { ideal: 480 }
             }
         };
+        
         try {
             const stream = await navigator.mediaDevices.getUserMedia(constraints);
             currentStream = stream;
-            video.srcObject = stream;
-            await video.play();
+            videoEl.srcObject = stream;
+            await videoEl.play();
+            
+            // Configurar canvas com as dimensões do video
+            setTimeout(() => {
+                canvasEl.width = videoEl.videoWidth || 640;
+                canvasEl.height = videoEl.videoHeight || 480;
+            }, 200);
+            
             statusDiv.innerHTML = `📷 Câmera ${facingMode === 'user' ? 'FRONTAL' : 'TRASEIRA'} ativa. Modo: ${operationMode === 'register' ? 'CADASTRO' : 'VERIFICAÇÃO'}`;
             return true;
         } catch (err) {
             console.warn(err);
-            // fallback: tenta sem facingMode específico
-            const fallbackConstraints = { video: true };
+            // Fallback: tenta sem especificar facingMode
             try {
-                const fallbackStream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+                const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
                 currentStream = fallbackStream;
-                video.srcObject = fallbackStream;
-                await video.play();
-                statusDiv.innerHTML = `⚠️ Câmera padrão (fallback) ativa. Troca entre frontal/traseira pode não funcionar em alguns navegadores.`;
+                videoEl.srcObject = fallbackStream;
+                await videoEl.play();
+                statusDiv.innerHTML = `⚠️ Câmera padrão ativa (fallback). Troca pode não funcionar em alguns navegadores.`;
                 return true;
             } catch (err2) {
                 statusDiv.innerHTML = `🚫 Erro ao acessar câmera: ${err2.message}. Verifique permissões.`;
@@ -569,13 +632,11 @@
     }
     
     async function switchCamera() {
-        const newMode = currentFacingMode === "environment" ? "user" : "environment";
+        const newMode = currentFacingMode === "user" ? "environment" : "user";
         currentFacingMode = newMode;
         const success = await initCamera(currentFacingMode);
         if (success) {
             statusDiv.innerHTML = `🔄 Câmera alternada para ${currentFacingMode === 'user' ? 'FRONTAL' : 'TRASEIRA'}`;
-        } else {
-            statusDiv.innerHTML = `Falha ao alternar câmera, mantendo anterior.`;
         }
     }
     
@@ -585,52 +646,48 @@
             operationMode = "register";
             btnRegisterMode.style.background = "#1f6d5c";
             btnRegisterMode.innerHTML = "🔓 Modo Verificação";
-            statusDiv.innerHTML = "✍️ MODO CADASTRO ativo! Posicione a digital e clique em CAPTURAR. Depois informe o nome.";
+            statusDiv.innerHTML = "✍️ MODO CADASTRO ativo! Capture o rosto e informe o nome.";
         } else {
             operationMode = "verify";
             btnRegisterMode.style.background = "#2a2f4a";
             btnRegisterMode.innerHTML = "✍️ Modo Cadastro";
-            statusDiv.innerHTML = "🔍 MODO VERIFICAÇÃO ativo! O sistema reconhecerá digitais para bater ponto/segurança.";
+            statusDiv.innerHTML = "🔍 MODO VERIFICAÇÃO ativo! O sistema reconhecerá rostos para bater ponto/segurança.";
         }
     }
     
     function clearAllData() {
-        if (confirm("⚠️ ATENÇÃO: Isso apagará TODAS as digitais cadastradas. Continuar?")) {
-            registeredFingerprints = [];
+        if (confirm("⚠️ ATENÇÃO: Isso apagará TODOS os rostos cadastrados. Continuar?")) {
+            registeredUsers = [];
             nextId = 1;
             saveToLocalStorage();
-            renderFingerprintList();
-            statusDiv.innerHTML = "🧹 Todos os dados biométricos foram removidos. Cadastre novas digitais no modo CADASTRO.";
+            renderUserList();
+            statusDiv.innerHTML = "🧹 Todos os dados faciais foram removidos. Cadastre novos rostos no modo CADASTRO.";
         }
     }
     
-    // Carregar modelo TensorFlow MobileNet e iniciar aplicação
-    async function loadModelAndStart() {
-        statusDiv.innerHTML = "🧠 Carregando modelo de IA (MobileNet) para extrair digitais...";
-        try {
-            net = await mobilenet.load({ version: 2, alpha: 1.0 });
-            isModelReady = true;
-            statusDiv.innerHTML = "✅ IA pronta! Posicione a impressão digital nítida no centro da tela.";
-            document.getElementById('iaStatus').innerHTML = "🧬 IA Ativa + vetor CNN";
-        } catch (err) {
-            statusDiv.innerHTML = "❌ Falha ao carregar TensorFlow.js. Tente recarregar a página.";
-            console.error(err);
-            isModelReady = false;
-        }
-        // iniciar câmera padrão traseira
-        currentFacingMode = "environment";
+    // Inicialização completa
+    async function init() {
+        setupCanvas();
+        loadFromLocalStorage();
+        await initFaceMesh();
+        
+        // Iniciar câmera frontal por padrão (melhor para selfie)
+        currentFacingMode = "user";
         await initCamera(currentFacingMode);
+        
+        startDetectionLoop();
+        
+        // Eventos
+        btnSwitch.addEventListener('click', switchCamera);
+        btnCapture.addEventListener('click', onCapture);
+        btnRegisterMode.addEventListener('click', toggleRegisterMode);
+        clearAllBtn.addEventListener('click', clearAllData);
+        
+        updateStatusByMode();
     }
     
-    // Eventos
-    btnSwitch.addEventListener('click', switchCamera);
-    btnCapture.addEventListener('click', onCapture);
-    btnRegisterMode.addEventListener('click', toggleRegisterMode);
-    clearAllBtn.addEventListener('click', clearAllData);
-    
-    // Carregar dados salvos e iniciar
-    loadFromLocalStorage();
-    loadModelAndStart();
+    // Iniciar tudo quando a página carregar
+    window.addEventListener('load', init);
 </script>
 </body>
 </html>
