@@ -3,19 +3,374 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conexão Firebase</title>
+    <title>Documentação Firebase - ConectClin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px 40px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 3em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 1.1em;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+        }
+
+        .btn-warning {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #f57c00;
+        }
+
+        .tree {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .tree-item {
+            margin-left: 20px;
+            border-left: 2px solid #e0e0e0;
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+
+        .collection-node {
+            margin: 15px 0;
+        }
+
+        .collection-header {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+            border-left: 4px solid #667eea;
+        }
+
+        .collection-header:hover {
+            background: #e8e8e8;
+            transform: translateX(5px);
+        }
+
+        .collection-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .collection-meta {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: white;
+        }
+
+        .badge-primary {
+            background: #667eea;
+        }
+
+        .badge-success {
+            background: #4CAF50;
+        }
+
+        .documents-container {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .documents-container.show {
+            display: block;
+        }
+
+        .document-node {
+            background: #fafafa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 3px solid #4CAF50;
+        }
+
+        .document-id {
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .field-list {
+            display: grid;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .field-item {
+            display: flex;
+            gap: 10px;
+            padding: 8px;
+            background: white;
+            border-radius: 5px;
+        }
+
+        .field-key {
+            font-weight: bold;
+            color: #555;
+            min-width: 150px;
+        }
+
+        .field-value {
+            color: #333;
+            word-break: break-all;
+        }
+
+        .field-type {
+            color: #999;
+            font-style: italic;
+            font-size: 0.9em;
+        }
+
+        .subcollection-badge {
+            background: #ff9800;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .json-output {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .copy-btn {
+            margin-top: 10px;
+            padding: 8px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .search-box {
+            padding: 10px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 1em;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .export-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 30px 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .version-badge {
+            background: #9c27b0;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+        }
+    </style>
 </head>
 <body>
-    <h1>Teste de Conexão Firebase</h1>
-    <p id="status">Conectando...</p>
+    <div class="header">
+        <h1>📊 Documentação Firebase</h1>
+        <p>Estrutura Hierárquica Completa - ConectClin</p>
+        <p class="version-badge">Versão 1.0 - Gerado em <span id="data-geracao"></span></p>
+    </div>
 
-    <!-- Firebase SDKs -->
+    <div class="container">
+        <div class="stats" id="stats-container">
+            <div class="stat-card">
+                <div class="stat-number" id="total-collections">0</div>
+                <div class="stat-label">Coleções</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-documents">0</div>
+                <div class="stat-label">Documentos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-subcollections">0</div>
+                <div class="stat-label">Subcoleções</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="carregarEstrutura()">
+                🔄 Carregar Estrutura Completa
+            </button>
+            <button class="btn btn-success" onclick="exportarJSON()">
+                📥 Exportar JSON
+            </button>
+            <button class="btn btn-warning" onclick="expandirTudo()">
+                📂 Expandir Tudo
+            </button>
+            <button class="btn btn-warning" onclick="colapsarTudo()">
+                📁 Colapsar Tudo
+            </button>
+            <input type="text" class="search-box" placeholder="🔍 Filtrar coleções..." id="searchInput" onkeyup="filtrarColecoes()">
+        </div>
+
+        <div class="export-section" id="jsonSection" style="display: none;">
+            <h3>📄 Estrutura JSON</h3>
+            <div class="json-output" id="jsonOutput"></div>
+            <button class="copy-btn" onclick="copiarJSON()">📋 Copiar JSON</button>
+        </div>
+
+        <div class="tree" id="tree-container">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Carregando estrutura...</p>
+            </div>
+        </div>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
     <script>
-        // Sua configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBRnPddkN-QlcOELNu8gBxyT3MK3-pkXAc",
             authDomain: "conectclin-e1d4e.firebaseapp.com",
@@ -25,16 +380,239 @@
             appId: "1:771743976060:web:b544abec3c2714dd3ad7f9"
         };
 
-        // Inicializar Firebase
-        const app = firebase.initializeApp(firebaseConfig);
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const storage = firebase.storage();
 
-        // Verificar conexão
-        console.log("Firebase conectado:", app.name);
-        document.getElementById("status").innerHTML = "✅ Conectado com sucesso!";
-        console.log("Firestore disponível:", db);
-        console.log("Storage disponível:", storage);
+        let estruturaCompleta = {};
+        let totalDocs = 0;
+        let totalSubs = 0;
+
+        // Data de geração
+        document.getElementById('data-geracao').textContent = new Date().toLocaleString('pt-BR');
+
+        async function carregarEstrutura() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('tree-container').innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando estrutura...</p></div>';
+            
+            estruturaCompleta = {};
+            totalDocs = 0;
+            totalSubs = 0;
+
+            try {
+                // Buscar todas as coleções raiz
+                const collections = await db.listCollections();
+                
+                for (const collection of collections) {
+                    estruturaCompleta[collection.id] = await processarColecao(collection.id);
+                }
+
+                // Atualizar estatísticas
+                document.getElementById('total-collections').textContent = Object.keys(estruturaCompleta).length;
+                document.getElementById('total-documents').textContent = totalDocs;
+                document.getElementById('total-subcollections').textContent = totalSubs;
+
+                // Renderizar árvore
+                renderizarArvore(estruturaCompleta);
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                document.getElementById('tree-container').innerHTML = `
+                    <div style="color: red; padding: 20px;">
+                        Erro ao carregar: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function processarColecao(collectionPath, nivel = 0) {
+            const snapshot = await db.collection(collectionPath).get();
+            const docs = [];
+            
+            totalDocs += snapshot.size;
+
+            for (const doc of snapshot.docs) {
+                const docData = {
+                    id: doc.id,
+                    dados: doc.data(),
+                    subcolecoes: {}
+                };
+
+                // Buscar subcoleções
+                const subcollections = await doc.ref.listCollections();
+                if (subcollections.length > 0) {
+                    totalSubs += subcollections.length;
+                    for (const subcol of subcollections) {
+                        const subPath = `${collectionPath}/${doc.id}/${subcol.id}`;
+                        docData.subcolecoes[subcol.id] = await processarColecao(subPath, nivel + 1);
+                    }
+                }
+
+                docs.push(docData);
+            }
+
+            return {
+                documentos: docs,
+                totalDocumentos: snapshot.size,
+                caminho: collectionPath
+            };
+        }
+
+        function renderizarArvore(estrutura) {
+            let html = '';
+            
+            for (const [nomeColecao, dados] of Object.entries(estrutura)) {
+                html += `
+                    <div class="collection-node" data-collection="${nomeColecao}">
+                        <div class="collection-header" onclick="toggleCollection(this)">
+                            <div>
+                                <span class="collection-name">📁 ${nomeColecao}</span>
+                                ${dados.totalDocumentos > 0 ? 
+                                    `<span class="subcollection-badge">${dados.totalDocumentos} docs</span>` : ''}
+                            </div>
+                            <div class="collection-meta">
+                                <span class="badge badge-primary">${dados.totalDocumentos} documentos</span>
+                                <span>▶</span>
+                            </div>
+                        </div>
+                        <div class="documents-container">
+                            ${renderizarDocumentos(dados.documentos, nomeColecao)}
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('tree-container').innerHTML = html;
+        }
+
+        function renderizarDocumentos(documentos, colecaoPai) {
+            if (documentos.length === 0) {
+                return '<p style="color: #999; padding: 10px;">Nenhum documento encontrado</p>';
+            }
+
+            let html = '';
+            for (const doc of documentos) {
+                html += `
+                    <div class="tree-item">
+                        <div class="document-node">
+                            <div class="document-id">📄 ID: ${doc.id}</div>
+                            <div class="field-list">
+                                ${renderizarCampos(doc.dados)}
+                            </div>
+                            ${Object.keys(doc.subcolecoes).length > 0 ? 
+                                renderizarSubcolecoes(doc.subcolecoes, colecaoPai, doc.id) : ''}
+                        </div>
+                    </div>
+                `;
+            }
+            return html;
+        }
+
+        function renderizarCampos(dados, nivel = 0) {
+            let html = '';
+            for (const [chave, valor] of Object.entries(dados)) {
+                const tipo = Array.isArray(valor) ? 'array' : 
+                            valor instanceof firebase.firestore.Timestamp ? 'timestamp' :
+                            typeof valor;
+                
+                let valorFormatado = valor;
+                if (valor instanceof firebase.firestore.Timestamp) {
+                    valorFormatado = valor.toDate().toLocaleString('pt-BR');
+                } else if (typeof valor === 'object' && valor !== null) {
+                    valorFormatado = JSON.stringify(valor, null, 2);
+                }
+
+                html += `
+                    <div class="field-item">
+                        <span class="field-key">${chave}</span>
+                        <span class="field-value">${valorFormatado}</span>
+                        <span class="field-type">[${tipo}]</span>
+                    </div>
+                `;
+            }
+            return html;
+        }
+
+        function renderizarSubcolecoes(subcolecoes, colecaoPai, docId) {
+            let html = '';
+            for (const [nomeSub, dados] of Object.entries(subcolecoes)) {
+                html += `
+                    <div style="margin-top: 15px; margin-left: 20px;">
+                        <div style="background: #fff3e0; padding: 10px; border-radius: 8px; cursor: pointer;" 
+                             onclick="toggleCollection(this)">
+                            <strong>📂 Subcoleção: ${nomeSub}</strong>
+                            <span class="badge badge-success" style="margin-left: 10px;">
+                                ${dados.totalDocumentos} docs
+                            </span>
+                        </div>
+                        <div class="documents-container">
+                            ${renderizarDocumentos(dados.documentos, `${colecaoPai}/${docId}/${nomeSub}`)}
+                        </div>
+                    </div>
+                `;
+            }
+            return html;
+        }
+
+        function toggleCollection(element) {
+            const container = element.nextElementSibling;
+            const arrow = element.querySelector('span:last-child');
+            
+            if (container.classList.contains('show')) {
+                container.classList.remove('show');
+                if (arrow) arrow.textContent = '▶';
+            } else {
+                container.classList.add('show');
+                if (arrow) arrow.textContent = '▼';
+            }
+        }
+
+        function expandirTudo() {
+            document.querySelectorAll('.documents-container').forEach(container => {
+                container.classList.add('show');
+            });
+            document.querySelectorAll('.collection-header span:last-child').forEach(arrow => {
+                if (arrow) arrow.textContent = '▼';
+            });
+        }
+
+        function colapsarTudo() {
+            document.querySelectorAll('.documents-container').forEach(container => {
+                container.classList.remove('show');
+            });
+            document.querySelectorAll('.collection-header span:last-child').forEach(arrow => {
+                if (arrow) arrow.textContent = '▶';
+            });
+        }
+
+        function exportarJSON() {
+            document.getElementById('jsonSection').style.display = 'block';
+            document.getElementById('jsonOutput').textContent = JSON.stringify(estruturaCompleta, null, 2);
+            
+            // Scroll até a seção JSON
+            document.getElementById('jsonSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copiarJSON() {
+            const jsonText = document.getElementById('jsonOutput').textContent;
+            navigator.clipboard.writeText(jsonText).then(() => {
+                alert('✅ JSON copiado para a área de transferência!');
+            });
+        }
+
+        function filtrarColecoes() {
+            const termo = document.getElementById('searchInput').value.toLowerCase();
+            document.querySelectorAll('.collection-node').forEach(node => {
+                const nomeColecao = node.getAttribute('data-collection').toLowerCase();
+                if (nomeColecao.includes(termo)) {
+                    node.style.display = 'block';
+                } else {
+                    node.style.display = 'none';
+                }
+            });
+        }
+
+        // Carregar automaticamente ao iniciar
+        window.addEventListener('load', carregarEstrutura);
     </script>
 </body>
 </html>
